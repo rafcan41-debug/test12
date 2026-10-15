@@ -53,6 +53,20 @@ function initSchema() {
   migrateQuestions(); // upgrade old DBs BEFORE schema exec (new index needs new columns)
   const schema = fs.readFileSync(path.join(__dirname, '..', 'schema.sql'), 'utf8');
   db.exec(schema);
+  ensurePrimaryExtraSubjects(); // fixed ids 40/41 for import files (no-op when categories not seeded yet)
 }
 
-module.exports = { db, initSchema };
+// Ensure the two extra primary subjects exist with FIXED ids (40, 41)
+// so question import files can reference them on fresh AND already-seeded DBs.
+function ensurePrimaryExtraSubjects() {
+  const cat = db.prepare("SELECT id FROM categories WHERE slug = 'primary-1-5'").get();
+  if (!cat) return;
+  const ins = db.prepare(`INSERT INTO subjects (id, category_id, name_bn, name_en)
+    SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE id = ?)`);
+  let added = 0;
+  added += ins.run(40, cat.id, 'প্রাথমিক বিজ্ঞান', 'Primary Science', 40).changes;
+  added += ins.run(41, cat.id, 'বাংলাদেশ ও বিশ্বপরিচয়', 'Bangladesh and World Studies', 41).changes;
+  if (added) console.log('[migrate] added primary subjects 40=প্রাথমিক বিজ্ঞান, 41=বাংলাদেশ ও বিশ্বপরিচয়');
+}
+
+module.exports = { db, initSchema, ensurePrimaryExtraSubjects };
