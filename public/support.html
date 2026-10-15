@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>সাপোর্ট — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <h2>💬 সাপোর্ট</h2>
+    <div class="two-col">
+      <div>
+        <h3>নতুন টিকিট খোলো</h3>
+        <div class="card">
+          <label>বিষয়</label><input id="t-sub" placeholder="যেমন: ভুল প্রশ্ন রিপোর্ট">
+          <label>বিস্তারিত</label><textarea id="t-msg" rows="4" placeholder="সমস্যাটি লিখো…"></textarea>
+          <button class="btn" onclick="createTicket()">পাঠাও</button>
+        </div>
+      </div>
+      <div>
+        <h3>আমার টিকিট</h3>
+        <div id="tickets"></div>
+      </div>
+    </div>
+    <div id="thread" class="card" style="display:none;margin-top:16px"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  await PK.nav();
+  load();
+})();
+
+async function createTicket() {
+  try {
+    await PK.api('/api/tickets', { method: 'POST', body: {
+      subject: document.getElementById('t-sub').value, message: document.getElementById('t-msg').value } });
+    PK.toast('টিকিট খোলা হয়েছে ✅'); document.getElementById('t-sub').value = ''; document.getElementById('t-msg').value = '';
+    load();
+  } catch (e) { PK.toast(e.message); }
+}
+
+async function load() {
+  const d = await PK.api('/api/tickets/mine');
+  const badge = s => s === 'open' ? '🔵 খোলা' : s === 'answered' ? '🟢 উত্তর এসেছে' : '⚫ বন্ধ';
+  document.getElementById('tickets').innerHTML = d.tickets.length ? d.tickets.map(t =>
+    `<div class="card" style="margin-bottom:8px"><b>${PK.esc(t.subject)}</b> <span class="muted">${badge(t.status)}</span><br>
+     <button class="btn small secondary" onclick="openThread(${t.id})">দেখো</button></div>`).join('')
+    : '<p class="muted">কোনো টিকিট নেই।</p>';
+}
+
+async function openThread(id) {
+  const d = await PK.api(`/api/tickets/${id}`);
+  const box = document.getElementById('thread');
+  box.style.display = 'block';
+  box.innerHTML = `<h3>${PK.esc(d.ticket.subject)} <span class="muted">(${d.ticket.status})</span></h3>
+    <div class="notif"><b>তুমি:</b> ${PK.esc(d.ticket.message)}</div>
+    ${d.replies.map(r => `<div class="notif"><b>${PK.esc(r.author_name)}${r.author_role === 'admin' ? ' (অ্যাডমিন)' : ''}:</b> ${PK.esc(r.message)}</div>`).join('')}
+    ${d.ticket.status !== 'closed' ? `<label>উত্তর লিখো</label><textarea id="reply-msg" rows="3"></textarea>
+    <button class="btn small" onclick="reply(${id})">পাঠাও</button>
+    <button class="btn small secondary" onclick="closeTicket(${id})">বন্ধ করো</button>` : ''}`;
+  window.scrollTo(0, box.offsetTop);
+}
+
+async function reply(id) {
+  try {
+    await PK.api(`/api/tickets/${id}/reply`, { method: 'POST', body: { message: document.getElementById('reply-msg').value } });
+    openThread(id); load();
+  } catch (e) { PK.toast(e.message); }
+}
+async function closeTicket(id) {
+  await PK.api(`/api/tickets/${id}/close`, { method: 'POST' });
+  document.getElementById('thread').style.display = 'none'; load();
+}
+</script>
+</body>
+</html>

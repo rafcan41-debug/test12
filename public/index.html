@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>পরীক্ষা — HSC, SSC, ভর্তি ও BCS এর সেরা প্রস্তুতি</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+
+<div class="hero">
+  <h1>📝 চর্চা করো নিজের গতিতে</h1>
+  <p>যেকোনো বিষয়ের টপিক থেকে প্রশ্ন খুঁজে প্র্যাকটিস করো, ব্যাখ্যা বুঝে নাও, আর মক টেস্ট দিয়ে নিজের প্রস্তুতি মাপো।</p>
+  <a class="btn" href="/auth.html" style="background:#fff;color:#0e7c4a">ফ্রি শুরু করো</a>
+  <a class="btn secondary" href="/exams.html" style="background:rgba(255,255,255,.2);color:#fff">মডেল টেস্ট দেখো</a>
+  <div class="stats">
+    <div><b>১০</b>ক্যাটাগরি</div>
+    <div><b>৩৯</b>বিষয়</div>
+    <div><b>২৪/৭</b>প্র্যাকটিস</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="section">
+    <h2>🎯 তোমার পরীক্ষা বেছে নাও</h2>
+    <div class="grid" id="cats"></div>
+  </div>
+
+  <div class="section">
+    <h2>✨ কেন পরীক্ষা?</h2>
+    <div class="grid">
+      <div class="card"><h3>⏱️ মডেল টেস্ট</h3><p class="muted">আসল পরীক্ষার মতো টাইমার, নেগেটিভ মার্কিং ও স্বয়ংক্রিয় জমা।</p></div>
+      <div class="card"><h3>⚡ কুইক প্র্যাকটিস</h3><p class="muted">টপিক অনুযায়ী দ্রুত MCQ প্র্যাকটিস, সাথে সাথে ব্যাখ্যা।</p></div>
+      <div class="card"><h3>🏆 লিডারবোর্ড</h3><p class="muted">সারাদেশের শিক্ষার্থীদের সাথে নিজের অবস্থান দেখো।</p></div>
+      <div class="card"><h3>🔖 বুকমার্ক</h3><p class="muted">কঠিন প্রশ্ন সেভ করে পরে রিভিশন দাও।</p></div>
+    </div>
+  </div>
+</div>
+
+<footer>© 2026 পরীক্ষা (Porikkha) — নিজের গতিতে পড়াশোনা।<br>একটি ওপেন, সেলফ-হোস্টেড পরীক্ষা প্ল্যাটফর্ম।</footer>
+
+<script src="/js/app.js"></script>
+<script>
+const ICONS = {'primary-1-5':'🧒','junior-6-8':'🎒','ssc':'📘','hsc':'📗','medical':'🩺','engineering':'⚙️','varsity':'🎓','bcs':'🏛️','bank':'🏦','primary-teacher':'🍎'};
+(async () => {
+  await PK.nav('home');
+  try {
+    const d = await PK.api('/api/catalog');
+    document.getElementById('cats').innerHTML = d.categories.map(c => `
+      <div class="card cat-card" onclick="location.href='/exams.html?cat=${c.id}'">
+        <div class="cat-icon">${ICONS[c.slug] || '📚'}</div>
+        <h3>${PK.esc(c.name_bn)}</h3>
+        <p class="muted">${c.subjects.length}টি বিষয়</p>
+      </div>`).join('');
+  } catch (e) {
+    document.getElementById('cats').innerHTML = '<p class="muted">লোড হচ্ছে…</p>';
+  }
+})();
+</script>
+</body>
+</html>

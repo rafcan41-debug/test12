@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>পরীক্ষা — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <!-- pre-start -->
+    <div id="intro" class="card" style="display:none">
+      <h2 id="e-title"></h2>
+      <p class="muted" id="e-meta"></p>
+      <div id="e-prev"></div>
+      <button class="btn" id="start-btn" onclick="startExam()">▶️ পরীক্ষা শুরু করো</button>
+      <a class="btn secondary" href="/exams.html">ফিরে যাও</a>
+    </div>
+
+    <!-- runner -->
+    <div id="runner" style="display:none">
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <b id="r-title"></b><span class="timer" id="r-timer"></span>
+      </div>
+      <div class="card">
+        <div class="q-palette" id="palette"></div>
+        <h3 id="q-text"></h3>
+        <div id="q-opts"></div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn secondary small" onclick="move(-1)">← আগের</button>
+          <button class="btn secondary small" onclick="move(1)">পরের →</button>
+          <button class="btn danger small" onclick="submitExam(false)">জমা দাও</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- result -->
+    <div id="result" class="card" style="display:none"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+const examId = new URLSearchParams(location.search).get('id');
+let attemptId = null, qs = [], answers = {}, idx = 0, endsAt = 0, timerH = null, exam = null;
+
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  await PK.nav('exams');
+  if (!examId) { location.href = '/exams.html'; return; }
+  const d = await PK.api(`/api/exams/${examId}`);
+  exam = d.exam;
+  document.getElementById('intro').style.display = 'block';
+  document.getElementById('e-title').textContent = exam.title;
+  document.getElementById('e-meta').textContent = `⏱️ ${exam.duration_min} মিনিট • ${exam.question_limit}টি প্রশ্ন • নেগেটিভ ${exam.negative_mark} • পাস মার্ক ${exam.pass_marks}`;
+  const mine = await PK.api(`/api/exams/${examId}/my-attempts`);
+  const done = mine.attempts.filter(a => a.status === 'submitted');
+  if (done.length) {
+    document.getElementById('e-prev').innerHTML = '<h3>তোমার আগের ফলাফল</h3>' + done.map(a =>
+      `<p>স্কোর: <b>${a.score}/${a.total_marks}</b> (${a.percentage}%) — ${a.passed ? '<span class="pass">পাস ✅</span>' : '<span class="fail">ফেল ❌</span>'}
+       <a href="#" onclick="showReview(${a.id});return false">রিভিউ দেখো</a></p>`).join('');
+  }
+  // resume in-progress attempt if any
+  const prog = mine.attempts.find(a => a.status === 'in_progress');
+  if (prog) {
+    document.getElementById('start-btn').textContent = '▶️ চালিয়ে যাও (আগের অসমাপ্ত পরীক্ষা)';
+    document.getElementById('start-btn').onclick = () => resumeAttempt(prog.id);
+  }
+})();
+
+async function startExam() {
+  try {
+    const d = await PK.api(`/api/exams/${examId}/start`, { method: 'POST' });
+    beginAttempt(d.attempt_id, d.questions, d.ends_at);
+  } catch (e) { PK.toast(e.message); }
+}
+
+async function resumeAttempt(id) {
+  const d = await PK.api(`/api/exams/attempts/${id}`);
+  answers = d.answers || {};
+  beginAttempt(d.attempt.id, d.questions, d.attempt.ends_at);
+}
+
+function beginAttempt(id, questions, ends) {
+  attemptId = id; qs = questions; endsAt = new Date(ends).getTime(); idx = 0;
+  localStorage.setItem('pk_attempt_' + id, JSON.stringify({ answers }));
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('runner').style.display = 'block';
+  document.getElementById('r-title').textContent = exam.title;
+  renderPalette(); renderQ(); tick();
+  timerH = setInterval(tick, 1000);
+  setInterval(autosave, 15000); // server draft autosave
+}
+
+function tick() {
+  const left = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
+  const m = Math.floor(left / 60), s = left % 60;
+  document.getElementById('r-timer').textContent = `${m}:${String(s).padStart(2, '0')}`;
+  if (left <= 0) { clearInterval(timerH); submitExam(true); }
+}
+
+function renderPalette() {
+  document.getElementById('palette').innerHTML = qs.map((q, i) =>
+    `<button class="${answers[q.id] ? 'answered' : ''} ${i === idx ? 'current' : ''}" onclick="jump(${i})">${i + 1}</button>`).join('');
+}
+function jump(i) { idx = i; renderPalette(); renderQ(); }
+function move(d) { idx = Math.min(qs.length - 1, Math.max(0, idx + d)); renderPalette(); renderQ(); }
+
+function renderQ() {
+  const q = qs[idx];
+  document.getElementById('q-text').textContent = `${idx + 1}. ${q.question_text}`;
+  document.getElementById('q-opts').innerHTML = ['a','b','c','d'].map(o =>
+    `<button class="option ${answers[q.id] === o ? 'selected' : ''}" onclick="pick('${o}')"><b>${o.toUpperCase()}.</b> ${PK.esc(q['option_'+o])}</button>`).join('');
+}
+
+function pick(o) {
+  answers[qs[idx].id] = o;
+  localStorage.setItem('pk_attempt_' + attemptId, JSON.stringify({ answers }));
+  renderPalette(); renderQ();
+}
+
+async function autosave() {
+  if (!attemptId) return;
+  try { await PK.api(`/api/exams/attempts/${attemptId}/save`, { method: 'POST', body: { answers } }); } catch (e) {}
+}
+
+async function submitExam(auto) {
+  if (!auto && !confirm('পরীক্ষা জমা দেবে?')) return;
+  clearInterval(timerH);
+  try {
+    const r = await PK.api(`/api/exams/attempts/${attemptId}/submit`, { method: 'POST', body: { answers } });
+    localStorage.removeItem('pk_attempt_' + attemptId);
+    attemptId = null;
+    document.getElementById('runner').style.display = 'none';
+    const rv = document.getElementById('result');
+    rv.style.display = 'block';
+    rv.innerHTML = `<h2>${auto ? '⏰ সময় শেষ!' : '✅'} ফলাফল</h2>
+      <div class="result-big">${r.score} / ${r.total_marks}</div>
+      <p>${r.percentage}% — ${r.passed ? '<span class="pass">পাস 🎉</span>' : '<span class="fail">ফেল</span>'}</p>
+      <p class="muted">সঠিক: ${r.correct_count} • ভুল: ${r.wrong_count} • উত্তর দাওনি: ${r.unanswered_count} • সময়: ${r.time_taken_sec}s</p>
+      <button class="btn" onclick="showReview(${r.attempt_id})">উত্তর রিভিউ দেখো</button>
+      <a class="btn secondary" href="/exams.html">আরো পরীক্ষা</a>`;
+  } catch (e) { PK.toast(e.message); }
+}
+
+async function showReview(id) {
+  const d = await PK.api(`/api/exams/attempts/${id}/review`);
+  const rv = document.getElementById('result');
+  rv.style.display = 'block';
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('runner').style.display = 'none';
+  rv.innerHTML = '<h2>📋 উত্তর রিভিউ</h2>' + d.review.map((q, i) => `
+    <div class="card" style="margin-bottom:10px">
+      <b>${i + 1}. ${PK.esc(q.question_text)}</b>
+      ${['a','b','c','d'].map(o => `<div class="option ${o === q.correct_option ? 'correct' : ''} ${o === q.selected && o !== q.correct_option ? 'wrong' : ''}" style="cursor:default"><b>${o.toUpperCase()}.</b> ${PK.esc(q['option_'+o])}${o === q.selected ? ' ← তোমার উত্তর' : ''}</div>`).join('')}
+      ${q.explanation ? `<div class="explain"><b>ব্যাখ্যা:</b> ${PK.esc(q.explanation)}</div>` : ''}
+      ${q.year || q.source ? `<p class="muted" style="margin-top:6px">📜 ${PK.esc(q.source || '')}${q.year ? ' ' + q.year : ''}</p>` : ''}
+    </div>`).join('');
+}
+</script>
+</body>
+</html>

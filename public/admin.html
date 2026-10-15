@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>অ্যাডমিন প্যানেল — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>.admin-tabs{position:sticky;top:57px;background:var(--bg);padding:8px 0;z-index:40}</style>
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <h2>🛠️ অ্যাডমিন প্যানেল</h2>
+    <div id="pw-warn"></div>
+    <div class="tabs admin-tabs" id="tabs"></div>
+    <div id="pane"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+let CAT = [];
+const TABS = [
+  ['stats', '📊 ড্যাশবোর্ড'], ['users', '👥 ব্যবহারকারী'], ['questions', '❓ প্রশ্ন ব্যাংক'],
+  ['import', '📥 ইমপোর্ট'], ['exams', '📝 পরীক্ষা'], ['payments', '💰 পেমেন্ট'],
+  ['tickets', '💬 টিকিট'], ['audit', '📜 অডিট লগ'],
+];
+let cur = 'stats';
+
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  if (u.role !== 'admin') { location.href = '/dashboard.html'; return; }
+  await PK.nav('admin');
+  const d = await PK.api('/api/catalog'); CAT = d.categories;
+  document.getElementById('tabs').innerHTML = TABS.map(([k, l]) =>
+    `<button data-k="${k}" class="${k === cur ? 'active' : ''}">${l}</button>`).join('');
+  document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+    cur = b.dataset.k;
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
+    render();
+  });
+  render();
+})();
+
+function render() {
+  ({ stats: pStats, users: pUsers, questions: pQuestions, import: pImport, exams: pExams, payments: pPayments, tickets: pTickets, audit: pAudit })[cur]();
+}
+
+// ---------- stats ----------
+async function pStats() {
+  const s = await PK.api('/api/admin/stats');
+  document.getElementById('pane').innerHTML = `<div class="grid">
+    <div class="card"><h3>${s.users}</h3><p class="muted">মোট ব্যবহারকারী (${s.students} ছাত্র)</p></div>
+    <div class="card"><h3>${s.premium}</h3><p class="muted">প্রিমিয়াম সদস্য</p></div>
+    <div class="card"><h3>${s.questions}</h3><p class="muted">প্রকাশিত প্রশ্ন (${s.question_drafts} ড্রাফট)</p></div>
+    <div class="card"><h3>${s.exams_taken}</h3><p class="muted">পরীক্ষা দেওয়া হয়েছে</p></div>
+    <div class="card"><h3>${s.pending_payments}</h3><p class="muted">পেমেন্ট অপেক্ষমাণ</p></div>
+    <div class="card"><h3>${s.open_tickets}</h3><p class="muted">খোলা টিকিট</p></div></div>
+    <p style="margin-top:12px"><a class="btn small secondary" href="/api/admin/reports/results.csv">⬇️ ফলাফলের CSV ডাউনলোড</a></p>`;
+}
+
+// ---------- users ----------
+async function pUsers() {
+  const d = await PK.api('/api/admin/users?limit=50');
+  const opts = (v, arr) => arr.map(o => `<option value="${o}" ${v === o ? 'selected' : ''}>${o}</option>`).join('');
+  document.getElementById('pane').innerHTML = `<table><tr><th>ID</th><th>নাম</th><th>ইমেইল</th><th>রোল</th><th>স্ট্যাটাস</th><th>প্ল্যান</th><th></th></tr>
+    ${d.users.map(u => `<tr><td>${u.id}</td><td>${PK.esc(u.name)}</td><td>${PK.esc(u.email)}</td>
+      <td><select id="r-${u.id}">${opts(u.role, ['student', 'teacher', 'admin'])}</select></td>
+      <td><select id="s-${u.id}">${opts(u.status, ['active', 'banned'])}</select></td>
+      <td><select id="p-${u.id}">${opts(u.plan, ['free', 'premium'])}</select></td>
+      <td><button class="btn small" onclick="saveUser(${u.id})">সেভ</button></td></tr>`).join('')}</table>`;
+}
+async function saveUser(id) {
+  try {
+    await PK.api(`/api/admin/users/${id}`, { method: 'PUT', body: {
+      role: document.getElementById('r-' + id).value,
+      status: document.getElementById('s-' + id).value,
+      plan: document.getElementById('p-' + id).value } });
+    PK.toast('সেভ হয়েছে ✅');
+  } catch (e) { PK.toast(e.message); }
+}
+
+// ---------- questions ----------
+let qPage = 1;
+async function pQuestions() {
+  const pane = document.getElementById('pane');
+  pane.innerHTML = `
+    <div class="card" style="margin-bottom:12px">
+      <div class="two-col">
+        <div><label>বিষয়</label><select id="qf-sub"><option value="">— সব —</option></select>
+        <label>কাঠিন্য</label><select id="qf-diff"><option value="">— সব —</option><option value="easy">সহজ</option><option value="medium">মাঝারি</option><option value="hard">কঠিন</option></select></div>
+        <div><label>বছর</label><input id="qf-year" type="number" placeholder="যেমন: 2024">
+        <label>উৎস</label><input id="qf-source" placeholder="যেমন: SSC Dhaka Board"></div>
+      </div>
+      <div class="two-col">
+        <div><label>স্ট্যাটাস</label><select id="qf-status"><option value="">— সব —</option><option value="draft">ড্রাফট</option><option value="published">প্রকাশিত</option><option value="archived">আর্কাইভ</option></select></div>
+        <div><label>খুঁজুন</label><input id="qf-q" placeholder="প্রশ্নের অংশ লিখুন…"></div>
+      </div>
+      <button class="btn small" onclick="qPage=1;loadQ()">ফিল্টার করো</button>
+      <button class="btn small secondary" onclick="qForm()">+ নতুন প্রশ্ন</button>
+    </div>
+    <div id="q-list"></div><div id="q-form"></div>`;
+  const ss = document.getElementById('qf-sub');
+  CAT.forEach(c => c.subjects.forEach(s => ss.innerHTML += `<option value="${s.id}">${PK.esc(c.name_bn)} › ${PK.esc(s.name_bn)}</option>`));
+  loadQ();
+}
+async function loadQ() {
+  const p = new URLSearchParams({ page: qPage, limit: 15 });
+  ['sub:subject_id', 'diff:difficulty', 'year:year', 'source:source', 'status:status', 'q:q'].forEach(([id, k]) => {
+    const v = document.getElementById('qf-' + id).value.trim();
+    if (v) p.set(k, v);
+  });
+  const d = await PK.api('/api/questions?' + p);
+  document.getElementById('q-list').innerHTML = `<p class="muted">মোট: ${d.total}</p><table>
+    <tr><th>ID</th><th>প্রশ্ন</th><th>বছর/উৎস</th><th>স্ট্যাটাস</th><th></th></tr>
+    ${d.questions.map(q => `<tr><td>${q.id}</td><td>${PK.esc(q.question_text.slice(0, 70))}…</td>
+      <td>${q.year || ''} ${PK.esc(q.source || '')}</td><td>${q.status}</td>
+      <td style="white-space:nowrap">
+        <button class="btn small secondary" onclick="qForm(${q.id})">এডিট</button>
+        <button class="btn small" onclick="qPublish(${q.id})">প্রকাশ</button>
+        <button class="btn small danger" onclick="qDel(${q.id})">মুছো</button>
+      </td></tr>`).join('')}</table>
+    <div style="margin-top:8px"><button class="btn small secondary" ${qPage <= 1 ? 'disabled' : ''} onclick="qPage--;loadQ()">←</button>
+    <button class="btn small secondary" onclick="qPage++;loadQ()">→</button></div>`;
+}
+async function qForm(id) {
+  let q = null;
+  if (id) q = (await PK.api('/api/questions/' + id)).question;
+  const g = (k, dflt = '') => q ? (q[k] ?? dflt) : dflt;
+  document.getElementById('q-form').innerHTML = `<div class="card" style="margin-top:12px"><h3>${id ? 'প্রশ্ন এডিট' : 'নতুন প্রশ্ন'}</h3>
+    <label>বিষয় ID</label><input id="qe-sub" type="number" value="${g('subject_id')}" placeholder="বিষয়ের ID">
+    <label>প্রশ্ন</label><textarea id="qe-text" rows="2">${PK.esc(g('question_text'))}</textarea>
+    <div class="two-col">
+      <div><label>অপশন A</label><input id="qe-a" value="${PK.esc(g('option_a'))}"><label>অপশন C</label><input id="qe-c" value="${PK.esc(g('option_c'))}"></div>
+      <div><label>অপশন B</label><input id="qe-b" value="${PK.esc(g('option_b'))}"><label>অপশন D</label><input id="qe-d" value="${PK.esc(g('option_d'))}"></div>
+    </div>
+    <div class="two-col">
+      <div><label>সঠিক উত্তর</label><select id="qe-correct">${['a','b','c','d'].map(o => `<option ${g('correct_option') === o ? 'selected' : ''}>${o}</option>`).join('')}</select>
+      <label>কাঠিন্য</label><select id="qe-diff">${['easy','medium','hard'].map(o => `<option ${g('difficulty', 'medium') === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div>
+      <div><label>বছর (ঐচ্ছিক)</label><input id="qe-year" type="number" value="${g('year') || ''}" placeholder="যেমন: 2024">
+      <label>উৎস (ঐচ্ছিক)</label><input id="qe-source" value="${PK.esc(g('source') || '')}" placeholder="যেমন: SSC Dhaka Board"></div>
+    </div>
+    <label>ব্যাখ্যা (বাংলায়)</label><textarea id="qe-exp" rows="2">${PK.esc(g('explanation') || '')}</textarea>
+    <label>স্ট্যাটাস</label><select id="qe-status">${['draft','published','archived'].map(o => `<option ${g('status', 'draft') === o ? 'selected' : ''}>${o}</option>`).join('')}</select>
+    <button class="btn" onclick="qSave(${id || 'null'})">সেভ করো</button></div>`;
+  window.scrollTo(0, document.getElementById('q-form').offsetTop);
+}
+async function qSave(id) {
+  const body = {
+    subject_id: Number(document.getElementById('qe-sub').value),
+    question_text: document.getElementById('qe-text').value,
+    option_a: document.getElementById('qe-a').value, option_b: document.getElementById('qe-b').value,
+    option_c: document.getElementById('qe-c').value, option_d: document.getElementById('qe-d').value,
+    correct_option: document.getElementById('qe-correct').value,
+    difficulty: document.getElementById('qe-diff').value,
+    year: document.getElementById('qe-year').value || null,
+    source: document.getElementById('qe-source').value || null,
+    explanation: document.getElementById('qe-exp').value,
+    status: document.getElementById('qe-status').value,
+  };
+  try {
+    if (id) await PK.api('/api/questions/' + id, { method: 'PUT', body });
+    else await PK.api('/api/questions', { method: 'POST', body });
+    PK.toast('সেভ হয়েছে ✅'); document.getElementById('q-form').innerHTML = ''; loadQ();
+  } catch (e) { PK.toast(e.message); }
+}
+async function qPublish(id) { await PK.api(`/api/questions/${id}/publish`, { method: 'POST' }); PK.toast('প্রকাশিত ✅'); loadQ(); }
+async function qDel(id) { if (confirm('মুছবে?')) { await PK.api('/api/questions/' + id, { method: 'DELETE' }); loadQ(); } }
+
+// ---------- import ----------
+function pImport() {
+  document.getElementById('pane').innerHTML = `<div class="card" style="max-width:640px">
+    <h3>📥 বাল্ক প্রশ্ন ইমপোর্ট (JSON)</h3>
+    <ol>
+      <li><a href="/template-questions.json" download>📄 টেমপ্লেট ফাইল ডাউনলোড করো (template-questions.json)</a></li>
+      <li>তোমার বই থেকে প্রশ্ন টাইপ করে টেমপ্লেটের মতো সাজাও (সর্বোচ্চ ৫০০টি একবারে)</li>
+      <li>নিচের বক্সে JSON পেস্ট করে <b>ইমপোর্ট</b> চাপো — সব ড্রাফট হিসেবে আসবে, যাচাই করে প্রকাশ করো</li>
+    </ol>
+    <p class="muted">বিস্তারিত নির্দেশনা: <a href="/IMPORT_GUIDE.md" target="_blank">IMPORT_GUIDE.md</a> • ফরম্যাট: <code>{"questions": [...]}</code></p>
+    <label>JSON পেস্ট করো</label><textarea id="imp-json" rows="10" placeholder='{"questions": [...]}'></textarea>
+    <button class="btn" onclick="doImport()">ইমপোর্ট করো</button>
+    <div id="imp-res" style="margin-top:10px"></div>
+  </div>`;
+}
+async function doImport() {
+  try {
+    const data = JSON.parse(document.getElementById('imp-json').value);
+    const r = await PK.api('/api/questions/import', { method: 'POST', body: data });
+    document.getElementById('imp-res').innerHTML =
+      `<p class="pass">✅ ${r.added}টি প্রশ্ন যোগ হয়েছে (ড্রাফট)</p>` +
+      (r.errors.length ? `<p class="fail">⚠️ ${r.errors.length}টিতে ভুল:</p><pre>${PK.esc(JSON.stringify(r.errors.slice(0, 10), null, 1))}</pre>` : '');
+  } catch (e) { PK.toast(e.message); }
+}
+
+// ---------- exams ----------
+async function pExams() {
+  const d = await PK.api('/api/exams');
+  document.getElementById('pane').innerHTML = `
+    <div class="card" style="margin-bottom:12px"><h3>+ নতুন পরীক্ষা</h3>
+      <label>শিরোনাম</label><input id="xe-title" placeholder="যেমন: SSC গণিত মডেল টেস্ট ১">
+      <div class="two-col">
+        <div><label>ক্যাটাগরি</label><select id="xe-cat"><option value="">—</option></select>
+        <label>সময় (মিনিট)</label><input id="xe-dur" type="number" value="30"></div>
+        <div><label>নেগেটিভ মার্কিং</label><input id="xe-neg" type="number" step="0.25" value="0.25">
+        <label>পাস মার্ক</label><input id="xe-pass" type="number" value="0"></div>
+      </div>
+      <label>ধরন</label><select id="xe-mode"><option value="filter">ফিল্টার (বিষয়/বছর/উৎস অনুযায়ী)</option><option value="fixed">নির্দিষ্ট প্রশ্ন (ID তালিকা)</option></select>
+      <div id="xe-filter-box">
+        <div class="two-col">
+          <div><label>বিষয় ID</label><input id="xe-sub" type="number" placeholder="বিষয়ের ID">
+          <label>বছর</label><input id="xe-year" type="number" placeholder="যেমন: 2024"></div>
+          <div><label>উৎস</label><input id="xe-source" placeholder="যেমন: SSC Dhaka Board">
+          <label>প্রশ্ন সংখ্যা</label><input id="xe-limit" type="number" value="20"></div>
+        </div>
+      </div>
+      <div id="xe-fixed-box" style="display:none"><label>প্রশ্ন ID (কমা দিয়ে)</label><input id="xe-ids" placeholder="যেমন: 1,2,3,4,5"></div>
+      <button class="btn" onclick="examSave()">তৈরি করো</button>
+    </div>
+    <table><tr><th>ID</th><th>শিরোনাম</th><th>স্ট্যাটাস</th><th></th></tr>
+    ${d.exams.map(e => `<tr><td>${e.id}</td><td>${PK.esc(e.title)}</td><td>${e.status}</td>
+      <td style="white-space:nowrap"><button class="btn small" onclick="examPub(${e.id})">প্রকাশ</button>
+      <button class="btn small secondary" onclick="examArch(${e.id})">আর্কাইভ</button></td></tr>`).join('')}</table>`;
+  const cs = document.getElementById('xe-cat');
+  CAT.forEach(c => cs.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
+  document.getElementById('xe-mode').onchange = (e) => {
+    const fixed = e.target.value === 'fixed';
+    document.getElementById('xe-filter-box').style.display = fixed ? 'none' : 'block';
+    document.getElementById('xe-fixed-box').style.display = fixed ? 'block' : 'none';
+  };
+}
+async function examSave() {
+  const mode = document.getElementById('xe-mode').value;
+  const body = {
+    title: document.getElementById('xe-title').value,
+    category_id: Number(document.getElementById('xe-cat').value) || null,
+    duration_min: Number(document.getElementById('xe-dur').value),
+    negative_mark: Number(document.getElementById('xe-neg').value),
+    pass_marks: Number(document.getElementById('xe-pass').value),
+    selection_mode: mode,
+  };
+  if (mode === 'filter') {
+    body.filter = {
+      subject_id: Number(document.getElementById('xe-sub').value) || undefined,
+      year: document.getElementById('xe-year').value ? Number(document.getElementById('xe-year').value) : undefined,
+      source: document.getElementById('xe-source').value.trim() || undefined,
+      limit: Number(document.getElementById('xe-limit').value),
+    };
+    body.question_limit = body.filter.limit;
+  } else {
+    body.question_ids = document.getElementById('xe-ids').value.split(',').map(x => Number(x.trim())).filter(Boolean);
+  }
+  try { await PK.api('/api/exams', { method: 'POST', body }); PK.toast('পরীক্ষা তৈরি ✅'); pExams(); }
+  catch (e) { PK.toast(e.message); }
+}
+async function examPub(id) { await PK.api(`/api/exams/${id}/publish`, { method: 'POST' }); PK.toast('প্রকাশিত ✅'); pExams(); }
+async function examArch(id) { await PK.api(`/api/exams/${id}/archive`, { method: 'POST' }); pExams(); }
+
+// ---------- payments ----------
+async function pPayments() {
+  const d = await PK.api('/api/payments?status=pending');
+  document.getElementById('pane').innerHTML = d.payments.length ? `<table>
+    <tr><th>ID</th><th>ব্যবহারকারী</th><th>TrxID</th><th>টাকা</th><th>তারিখ</th><th></th></tr>
+    ${d.payments.map(p => `<tr><td>${p.id}</td><td>${PK.esc(p.user_name)}<br><span class="muted">${PK.esc(p.user_email)}</span></td>
+      <td>${PK.esc(p.bkash_txn_id)}</td><td>৳${p.amount}</td><td>${PK.esc(p.created_at.slice(0, 16))}</td>
+      <td style="white-space:nowrap"><button class="btn small" onclick="payOk(${p.id})">অনুমোদন</button>
+      <button class="btn small danger" onclick="payNo(${p.id})">বাতিল</button></td></tr>`).join('')}</table>`
+    : '<p class="muted">কোনো অপেক্ষমাণ পেমেন্ট নেই।</p>';
+}
+async function payOk(id) { await PK.api(`/api/payments/${id}/approve`, { method: 'POST' }); PK.toast('প্রিমিয়াম চালু ✅'); pPayments(); }
+async function payNo(id) { const n = prompt('বাতিলের কারণ (ঐচ্ছিক):') || ''; await PK.api(`/api/payments/${id}/reject`, { method: 'POST', body: { note: n } }); pPayments(); }
+
+// ---------- tickets ----------
+async function pTickets() {
+  const d = await PK.api('/api/tickets');
+  document.getElementById('pane').innerHTML = d.tickets.length ? d.tickets.map(t => `
+    <div class="card" style="margin-bottom:8px"><b>#${t.id} ${PK.esc(t.subject)}</b> <span class="muted">[${t.status}] ${PK.esc(t.user_name)}</span>
+    <p class="muted">${PK.esc(t.message.slice(0, 120))}</p>
+    <div style="display:flex;gap:6px"><input id="tr-${t.id}" placeholder="উত্তর লিখো…" style="margin:0">
+    <button class="btn small" onclick="tReply(${t.id})">উত্তর</button>
+    <button class="btn small secondary" onclick="tClose(${t.id})">বন্ধ</button></div></div>`).join('')
+    : '<p class="muted">কোনো টিকিট নেই।</p>';
+}
+async function tReply(id) {
+  const m = document.getElementById('tr-' + id).value;
+  if (!m.trim()) return PK.toast('উত্তর লিখো');
+  await PK.api(`/api/tickets/${id}/reply`, { method: 'POST', body: { message: m } });
+  PK.toast('পাঠানো হয়েছে ✅'); pTickets();
+}
+async function tClose(id) { await PK.api(`/api/tickets/${id}/close`, { method: 'POST' }); pTickets(); }
+
+// ---------- audit ----------
+async function pAudit() {
+  const d = await PK.api('/api/admin/audit?limit=100');
+  document.getElementById('pane').innerHTML = `<table><tr><th>সময়</th><th>কে</th><th>কাজ</th><th>বিস্তারিত</th></tr>
+    ${d.audit.map(a => `<tr><td>${PK.esc(a.created_at.slice(0, 19))}</td><td>${PK.esc(a.actor_name || '—')}</td>
+      <td>${PK.esc(a.action)}${a.target_type ? ' / ' + PK.esc(a.target_type) + '#' + a.target_id : ''}</td>
+      <td class="muted">${PK.esc((a.details || '').slice(0, 80))}</td></tr>`).join('')}</table>`;
+}
+</script>
+</body>
+</html>

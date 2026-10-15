@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>লিডারবোর্ড — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <h2>🏆 লিডারবোর্ড</h2>
+    <div class="tabs">
+      <button id="t-exam" class="active">পরীক্ষা অনুযায়ী</button>
+      <button id="t-daily">দৈনিক</button>
+      <button id="t-weekly">সাপ্তাহিক</button>
+      <button id="t-monthly">মাসিক</button>
+    </div>
+    <div id="exam-pick" style="margin-bottom:12px"><label>পরীক্ষা</label><select id="lb-exam" style="max-width:320px"></select></div>
+    <div id="board"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+let mode = 'exam';
+const medals = ['🥇', '🥈', '🥉'];
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  await PK.nav('leaderboard');
+  const ex = await PK.api('/api/exams');
+  const sel = document.getElementById('lb-exam');
+  ex.exams.forEach(e => sel.innerHTML += `<option value="${e.id}">${PK.esc(e.title)}</option>`);
+  const urlExam = new URLSearchParams(location.search).get('exam');
+  if (urlExam) sel.value = urlExam;
+  sel.onchange = load;
+  const set = (m, btn) => { mode = m; ['t-exam','t-daily','t-weekly','t-monthly'].forEach(t => document.getElementById(t).classList.remove('active')); document.getElementById(btn).classList.add('active'); document.getElementById('exam-pick').style.display = m === 'exam' ? 'block' : 'none'; load(); };
+  document.getElementById('t-exam').onclick = () => set('exam', 't-exam');
+  document.getElementById('t-daily').onclick = () => set('daily', 't-daily');
+  document.getElementById('t-weekly').onclick = () => set('weekly', 't-weekly');
+  document.getElementById('t-monthly').onclick = () => set('monthly', 't-monthly');
+  load();
+})();
+
+async function load() {
+  const d = mode === 'exam'
+    ? await PK.api(`/api/leaderboard/exam/${document.getElementById('lb-exam').value}?limit=50`)
+    : await PK.api(`/api/leaderboard/period?range=${mode}&limit=50`);
+  const rows = d.leaderboard;
+  document.getElementById('board').innerHTML = rows.length ? `<table>
+    <tr><th>#</th><th>নাম</th><th>স্কোর</th><th>সময়</th></tr>
+    ${rows.map(r => `<tr><td>${medals[r.rank - 1] || r.rank}</td><td>${PK.esc(r.name)}</td>
+      <td><b>${Math.round(r.score * 100) / 100}</b>${mode !== 'exam' ? ` (${r.exams_taken}টি পরীক্ষা)` : ''}</td>
+      <td>${r.time_taken_sec != null ? r.time_taken_sec + 's' : '—'}</td></tr>`).join('')}
+    </table>` : '<p class="muted">এখনো কোনো ফলাফল নেই।</p>';
+}
+</script>
+</body>
+</html>

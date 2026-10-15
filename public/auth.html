@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>লগইন / রেজিস্টার — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="card form-card">
+    <div class="tabs">
+      <button id="tab-login" class="active">লগইন</button>
+      <button id="tab-reg">রেজিস্টার</button>
+      <button id="tab-forgot">পাসওয়ার্ড ভুলে গেছি</button>
+    </div>
+
+    <div id="pane-login">
+      <label>ইমেইল</label><input id="l-email" type="email" placeholder="you@example.com">
+      <label>পাসওয়ার্ড</label><input id="l-pass" type="password" placeholder="••••••">
+      <button class="btn" onclick="doLogin()">লগইন</button>
+    </div>
+
+    <div id="pane-reg" style="display:none">
+      <label>নাম</label><input id="r-name" placeholder="তোমার নাম">
+      <label>ইমেইল</label><input id="r-email" type="email" placeholder="you@example.com">
+      <label>পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="r-pass" type="password">
+      <label>শিক্ষাপ্রতিষ্ঠান (ঐচ্ছিক)</label><input id="r-inst" placeholder="স্কুল/কলেজের নাম">
+      <label>শ্রেণি (ঐচ্ছিক)</label><input id="r-class" placeholder="যেমন: HSC ২য় বর্ষ">
+      <button class="btn" onclick="doRegister()">অ্যাকাউন্ট খোলো</button>
+    </div>
+
+    <div id="pane-forgot" style="display:none">
+      <p class="muted">ইমেইল দাও — রিসেট টোকেন তৈরি হবে (ডেমো সংস্করণে সার্ভার লগে দেখা যাবে)।</p>
+      <label>ইমেইল</label><input id="f-email" type="email">
+      <button class="btn" onclick="doForgot()">রিসেট লিংক পাঠাও</button>
+      <div id="reset-box" style="display:none;margin-top:12px">
+        <label>টোকেন</label><input id="f-token" placeholder="সার্ভার লগ থেকে টোকেন">
+        <label>নতুন পাসওয়ার্ড</label><input id="f-pass" type="password">
+        <button class="btn secondary" onclick="doReset()">পাসওয়ার্ড বদলাও</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+PK.nav();
+function tab(name) {
+  ['login','reg','forgot'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+    document.getElementById('pane-'+t).style.display = t===name ? 'block' : 'none';
+  });
+}
+document.getElementById('tab-login').onclick = () => tab('login');
+document.getElementById('tab-reg').onclick = () => tab('reg');
+document.getElementById('tab-forgot').onclick = () => tab('forgot');
+
+async function doLogin() {
+  try {
+    await PK.api('/api/auth/login', { method: 'POST', body: {
+      email: document.getElementById('l-email').value, password: document.getElementById('l-pass').value } });
+    PK.user = null; location.href = '/dashboard.html';
+  } catch (e) { PK.toast(e.message); }
+}
+async function doRegister() {
+  try {
+    await PK.api('/api/auth/register', { method: 'POST', body: {
+      name: document.getElementById('r-name').value, email: document.getElementById('r-email').value,
+      password: document.getElementById('r-pass').value, institution: document.getElementById('r-inst').value,
+      class: document.getElementById('r-class').value } });
+    PK.user = null; location.href = '/dashboard.html';
+  } catch (e) { PK.toast(e.message); }
+}
+async function doForgot() {
+  try {
+    const d = await PK.api('/api/auth/forgot', { method: 'POST', body: { email: document.getElementById('f-email').value } });
+    PK.toast(d.message); document.getElementById('reset-box').style.display = 'block';
+  } catch (e) { PK.toast(e.message); }
+}
+async function doReset() {
+  try {
+    await PK.api('/api/auth/reset', { method: 'POST', body: {
+      token: document.getElementById('f-token').value.trim(), password: document.getElementById('f-pass').value } });
+    PK.toast('পাসওয়ার্ড বদলে গেছে, লগইন করো'); tab('login');
+  } catch (e) { PK.toast(e.message); }
+}
+</script>
+</body>
+</html>

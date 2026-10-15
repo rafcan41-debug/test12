@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>মডেল টেস্ট — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <h2>📝 মডেল টেস্ট</h2>
+    <div style="margin-bottom:12px"><label>ক্যাটাগরি ফিল্টার</label><select id="f-cat" style="max-width:320px"><option value="">— সব —</option></select></div>
+    <div class="grid" id="exams"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  await PK.nav('exams');
+  const cat = await PK.api('/api/catalog');
+  const sel = document.getElementById('f-cat');
+  const urlCat = new URLSearchParams(location.search).get('cat');
+  cat.categories.forEach(c => sel.innerHTML += `<option value="${c.id}" ${urlCat == c.id ? 'selected' : ''}>${PK.esc(c.name_bn)}</option>`);
+  sel.onchange = load;
+  load();
+  async function load() {
+    const d = await PK.api('/api/exams');
+    const list = d.exams.filter(e => !sel.value || e.category_id == sel.value);
+    document.getElementById('exams').innerHTML = list.length ? list.map(e => `
+      <div class="card">
+        <h3>${PK.esc(e.title)}</h3>
+        <p class="muted">${PK.esc(e.category_name || '')} • ⏱️ ${e.duration_min} মিনিট • ${e.question_limit}টি প্রশ্ন${e.negative_mark ? ` • ➖${e.negative_mark} নেগেটিভ` : ''}</p>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <a class="btn small" href="/exam.html?id=${e.id}">পরীক্ষা দাও</a>
+          <a class="btn small secondary" href="/leaderboard.html?exam=${e.id}">লিডারবোর্ড</a>
+        </div>
+      </div>`).join('') : '<p class="muted">কোনো পরীক্ষা পাওয়া যায়নি।</p>';
+  }
+})();
+</script>
+</body>
+</html>

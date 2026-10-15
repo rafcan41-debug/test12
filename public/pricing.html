@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>প্রাইসিং — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <h2>💎 প্ল্যান বেছে নাও</h2>
+    <div class="grid" id="plans"></div>
+
+    <div id="pay-box" class="card" style="display:none;margin-top:20px;max-width:520px">
+      <h3>📱 bKash-এ পেমেন্ট করো</h3>
+      <ol>
+        <li>bKash অ্যাপ থেকে <b>Send Money</b> করো: <b id="merchant">01XXXXXXXXX</b> (মার্চেন্ট নম্বর)</li>
+        <li>টাকার পরিমাণ: <b>৳<span id="pay-amount"></span></b></li>
+        <li>ট্রানজেকশন আইডি (TrxID) নিচে দাও</li>
+      </ol>
+      <label>bKash ট্রানজেকশন আইডি (TrxID)</label><input id="txn" placeholder="যেমন: 9HXK2LMN4P">
+      <label>তোমার bKash নম্বর</label><input id="sender" placeholder="01XXXXXXXXX">
+      <button class="btn" onclick="submitPayment()">জমা দাও</button>
+      <p class="muted" style="margin-top:8px">অ্যাডমিন যাচাই করে ২৪ ঘণ্টার মধ্যে প্রিমিয়াম চালু করে দেবেন।</p>
+    </div>
+
+    <h3 style="margin-top:20px">🧾 আমার পেমেন্ট</h3>
+    <div id="my-payments"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  await PK.nav('pricing');
+  const d = await PK.api('/api/payments/plans');
+  document.getElementById('plans').innerHTML = d.plans.map(p => `
+    <div class="card" ${p.id === 'premium' ? 'style="border:2px solid #f5a623"' : ''}>
+      <h3>${p.id === 'premium' ? '⭐' : '🆓'} ${PK.esc(p.name_bn)}</h3>
+      <div class="result-big" style="font-size:2rem">${p.price === 0 ? 'ফ্রি' : '৳' + p.price}</div>
+      <p class="muted">${p.id === 'premium' ? p.days + ' দিনের জন্য' : 'সবসময়'}</p>
+      <ul>${p.features.map(f => `<li>${PK.esc(f)}</li>`).join('')}</ul>
+      ${p.id === 'premium' ? (u.plan === 'premium'
+        ? '<p class="pass">✅ তোমার প্রিমিয়াম চালু আছে</p>'
+        : '<button class="btn" onclick="showPay(' + p.price + ')">প্রিমিয়াম নাও</button>') : ''}
+    </div>`).join('');
+  loadMine();
+})();
+
+function showPay(amount) {
+  document.getElementById('pay-amount').textContent = amount;
+  document.getElementById('pay-box').style.display = 'block';
+  window.scrollTo(0, document.getElementById('pay-box').offsetTop);
+}
+
+async function submitPayment() {
+  try {
+    await PK.api('/api/payments', { method: 'POST', body: {
+      bkash_txn_id: document.getElementById('txn').value.trim(),
+      sender_number: document.getElementById('sender').value.trim() } });
+    PK.toast('পেমেন্ট জমা হয়েছে ✅ যাচাইয়ের অপেক্ষায়');
+    document.getElementById('pay-box').style.display = 'none';
+    loadMine();
+  } catch (e) { PK.toast(e.message); }
+}
+
+async function loadMine() {
+  const d = await PK.api('/api/payments/mine');
+  const badge = s => s === 'approved' ? '<span class="pass">অনুমোদিত ✅</span>' : s === 'rejected' ? '<span class="fail">বাতিল ❌</span>' : '⏳ অপেক্ষমাণ';
+  document.getElementById('my-payments').innerHTML = d.payments.length ? `<table>
+    <tr><th>তারিখ</th><th>TrxID</th><th>টাকা</th><th>অবস্থা</th></tr>
+    ${d.payments.map(p => `<tr><td>${PK.esc(p.created_at.slice(0, 16))}</td><td>${PK.esc(p.bkash_txn_id)}</td><td>৳${p.amount}</td><td>${badge(p.status)}</td></tr>`).join('')}
+    </table>` : '<p class="muted">এখনো কোনো পেমেন্ট করোনি।</p>';
+}
+</script>
+</body>
+</html>
