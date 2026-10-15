@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS subjects (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
   name_bn TEXT NOT NULL,
-  name_en TEXT NOT NULL
+  name_en TEXT NOT NULL,
+  grp TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS chapters (
@@ -95,6 +96,7 @@ CREATE TABLE IF NOT EXISTS exams (
   filter_json TEXT,
   question_limit INTEGER NOT NULL DEFAULT 20,
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','archived')),
+  is_auto INTEGER NOT NULL DEFAULT 0,   -- 1 = auto-generated quick chapter test (hidden from exam list)
   created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

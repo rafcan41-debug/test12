@@ -65,7 +65,9 @@ function getAttemptOwned(attemptId, userId, role) {
 // --- exam catalog ----------------------------------------------------------
 
 router.get('/', requireAuth, (req, res) => {
-  const where = req.user.role === 'student' ? "WHERE e.status = 'published'" : '';
+  const where = req.user.role === 'student'
+    ? "WHERE e.status = 'published' AND e.is_auto = 0"
+    : 'WHERE e.is_auto = 0'; // hide auto quick-tests from the browse list
   const exams = db.prepare(
     `SELECT e.*, c.name_bn AS category_name FROM exams e
      LEFT JOIN categories c ON c.id = e.category_id ${where} ORDER BY e.id DESC`
@@ -162,6 +164,47 @@ function setExamStatus(req, res, status) {
 }
 router.post('/:id/publish', requireAuth, requireRole('teacher', 'admin'), (req, res) => setExamStatus(req, res, 'published'));
 router.post('/:id/archive', requireAuth, requireRole('teacher', 'admin'), (req, res) => setExamStatus(req, res, 'archived'));
+
+// --- quick chapter/class test ------------------------------------------------
+// Ad-hoc test: student picks category -> subject -> chapter (+count).
+// Finds or creates a hidden auto exam, returns its id. exam.html?id= works as-is.
+router.post('/quick', requireAuth, (req, res) => {
+  const subjectId = parseInt(req.body.subject_id, 10);
+  const chapterId = req.body.chapter_id ? parseInt(req.body.chapter_id, 10) : null;
+  if (!subjectId) return res.status(400).json({ error: 'বিষয় বাছাই করো' });
+  const sub = db.prepare(
+    `SELECT s.*, c.name_bn AS cat_name FROM subjects s
+     JOIN categories c ON c.id = s.category_id WHERE s.id = ?`).get(subjectId);
+  if (!sub) return res.status(400).json({ error: 'বিষয় পাওয়া যায়নি' });
+  const filter = { subject_id: subjectId };
+  let chapName = '';
+  if (chapterId) {
+    const ch = db.prepare('SELECT * FROM chapters WHERE id = ? AND subject_id = ?').get(chapterId, subjectId);
+    if (!ch) return res.status(400).json({ error: 'অধ্যায় পাওয়া যায়নি' });
+    filter.chapter_id = chapterId;
+    chapName = ch.name_bn;
+  }
+  const where = ["q.status = 'published'", 'q.subject_id = ?'];
+  const params = [subjectId];
+  if (chapterId) { where.push('q.chapter_id = ?'); params.push(chapterId); }
+  const avail = db.prepare(`SELECT COUNT(*) c FROM questions q WHERE ${where.join(' AND ')}`).get(...params).c;
+  if (!avail) return res.status(400).json({ error: 'এই নির্বাচনে কোনো প্রশ্ন নেই' });
+  const limit = Math.min(50, Math.max(5, parseInt(req.body.limit, 10) || 20), avail);
+  filter.limit = limit;
+  const key = JSON.stringify(filter);
+  let exam = db.prepare('SELECT * FROM exams WHERE is_auto = 1 AND filter_json = ?').get(key);
+  if (!exam) {
+    const title = `⚡ ${sub.name_bn}${chapName ? ' — ' + chapName : ''} কুইক টেস্ট`;
+    const info = db.prepare(`INSERT INTO exams
+      (title, title_en, category_id, duration_min, negative_mark, pass_marks,
+       selection_mode, filter_json, question_limit, status, is_auto, created_by)
+      VALUES (?,?,?,?,?,?,?,?,?, 'published', 1, ?)`)
+      .run(title, 'Quick Test', sub.category_id, limit, 0.25, Math.ceil(limit * 0.4),
+        'filter', key, limit, req.user.id);
+    exam = db.prepare('SELECT * FROM exams WHERE id = ?').get(info.lastInsertRowid);
+  }
+  res.json({ exam_id: exam.id });
+});
 
 // --- attempt lifecycle -------------------------------------------------------
 

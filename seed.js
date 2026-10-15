@@ -2,7 +2,7 @@
 // one sample exam, and the default admin user. Idempotent (runs once).
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { db, initSchema, ensurePrimaryExtraSubjects } = require('./src/db');
+const { db, initSchema, ensurePrimaryExtraSubjects, ensureClass610Subjects, ensureSubjectGroups } = require('./src/db');
 
 initSchema();
 
@@ -45,6 +45,8 @@ CATS.forEach(([slug, bn, en, subjects], i) => {
   if (!existing) for (const [sbn, sen] of subjects) subIns.run(cat.id, sbn, sen);
 });
 ensurePrimaryExtraSubjects(); // fixed ids 40/41 (also runs on boot via initSchema for older DBs)
+ensureClass610Subjects(); // fixed ids 100-148 (also runs on boot via initSchema for older DBs)
+ensureSubjectGroups(); // tag class 9-10 subjects with group (common/science/business/humanities)
 
 function subjectId(catSlug, nameBn) {
   return db.prepare(
@@ -179,6 +181,24 @@ db.prepare(`INSERT INTO exams (title, title_en, category_id, duration_min, negat
   VALUES (?,?,?,?,?,?,?,?,?, 'published')`)
   .run('নমুনা মডেল টেস্ট — সাধারণ', 'Sample Model Test', sscCat.id, 10, 0.25, 2,
     'filter', JSON.stringify({ limit: 5 }), 5);
+
+// --- subject-wise model tests (one per subject that has questions) -----------
+const examIns = db.prepare(`INSERT INTO exams (title, title_en, category_id, duration_min,
+  negative_mark, pass_marks, selection_mode, filter_json, question_limit, status)
+  VALUES (?,?,?,?,?,?,?,?,?, 'published')`);
+const subjQ = db.prepare(
+  `SELECT s.id, s.category_id, s.name_bn, COUNT(q.id) c FROM subjects s
+   LEFT JOIN questions q ON q.subject_id = s.id AND q.status = 'published'
+   GROUP BY s.id HAVING c >= 10`);
+let examCount = 0;
+for (const s of subjQ.all()) {
+  const limit = Math.min(50, s.c);
+  examIns.run(`${s.name_bn} মডেল টেস্ট`, `${s.name_bn} Model Test`, s.category_id,
+    limit, 0.25, Math.ceil(limit * 0.4), 'filter',
+    JSON.stringify({ subject_id: s.id, limit }), limit);
+  examCount++;
+}
+console.log(`[seed] model tests created: ${examCount}`);
 
 // --- default admin -------------------------------------------------------------
 const adminEmail = (process.env.ADMIN_EMAIL || 'admin@porikkha.local').toLowerCase();
