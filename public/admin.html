@@ -107,7 +107,8 @@ async function pQuestions() {
 }
 async function loadQ() {
   const p = new URLSearchParams({ page: qPage, limit: 15 });
-  ['sub:subject_id', 'diff:difficulty', 'year:year', 'source:source', 'status:status', 'q:q'].forEach(([id, k]) => {
+  ['sub:subject_id', 'diff:difficulty', 'year:year', 'source:source', 'status:status', 'q:q'].forEach(s => {
+    const [id, k] = s.split(':');
     const v = document.getElementById('qf-' + id).value.trim();
     if (v) p.set(k, v);
   });

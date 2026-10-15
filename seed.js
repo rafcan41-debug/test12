@@ -144,6 +144,34 @@ Q(se, 'Grammar', 'Vocabulary',
   'Choose the synonym of "rapid".', 'slow', 'fast', 'lazy', 'weak',
   'b', 'Rapid অর্থ দ্রুত; এর সমার্থক fast।', 'easy', 'vocabulary', null, null);
 
+// --- bulk question packs (seed_data/*.json) — auto-restores on every fresh deploy --
+const fs = require('fs');
+const path = require('path');
+const packDir = path.join(__dirname, 'seed_data');
+const packIns = db.prepare(`INSERT INTO questions
+  (subject_id, chapter_id, topic_id, question_text, option_a, option_b, option_c, option_d,
+   correct_option, explanation, marks, difficulty, tags, prev_year, year, source, origin, status, created_by)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'user', 'published', NULL)`);
+if (fs.existsSync(packDir)) {
+  const packTx = db.transaction((items) => {
+    for (const b of items) {
+      packIns.run(b.subject_id, b.chapter_id || null, b.topic_id || null, String(b.question_text).trim(),
+        String(b.option_a).trim(), String(b.option_b).trim(), String(b.option_c).trim(), String(b.option_d).trim(),
+        b.correct_option, (b.explanation || '').trim() || null, Number(b.marks || 1), b.difficulty || 'medium',
+        b.tags || null, (b.prev_year || b.year || b.source) ? 1 : 0, b.year || null, b.source || null);
+    }
+  });
+  let packCount = 0;
+  for (const f of fs.readdirSync(packDir).filter(f => f.endsWith('.json')).sort()) {
+    try {
+      const items = JSON.parse(fs.readFileSync(path.join(packDir, f), 'utf8')).questions || [];
+      packTx(items);
+      packCount += items.length;
+    } catch (e) { console.log('[seed] pack failed:', f, e.message); }
+  }
+  console.log(`[seed] question packs imported: ${packCount}`);
+}
+
 // --- sample published exam (filter mode, 5 random published questions) --------
 const sscCat = db.prepare('SELECT id FROM categories WHERE slug = ?').get('ssc');
 db.prepare(`INSERT INTO exams (title, title_en, category_id, duration_min, negative_mark, pass_marks,
