@@ -1,0 +1,1 @@
+{"dependencies":{"bcryptjs":"^2.4.3","better-sqlite3":"^12.4.0","dotenv":"^16.4.5","express":"^4.21.2","jsonwebtoken":"^9.0.2"},"description":"Porikkha — self-hosted online exam platform backend (Phase 1). Bangla-first.","license":"MIT","main":"server.js","name":"porikkha-exam-backend","scripts":{"seed":"node seed.js","start":"node server.js"},"type":"commonjs","version":"1.0.0"}
