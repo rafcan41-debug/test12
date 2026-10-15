@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ড্যাশবোর্ড — পরীক্ষা</title>
+<title data-i18n="title_dashboard">ড্যাশবোর্ড — পরীক্ষা</title>
 <link rel="stylesheet" href="/css/styles.css">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -17,45 +17,47 @@
 
     <div class="two-col">
       <div>
-        <h3>🔔 নোটিফিকেশন</h3>
+        <h3 data-i18n="h3_notif">🔔 নোটিফিকেশন</h3>
         <div id="notifs"></div>
-        <button class="btn small secondary" onclick="readAll()">সব পড়া হয়েছে</button>
+        <button class="btn small secondary" onclick="readAll()" data-i18n="btn_read_all">সব পড়া হয়েছে</button>
       </div>
       <div>
-        <h3>👤 প্রোফাইল</h3>
+        <h3 data-i18n="h3_profile">👤 প্রোফাইল</h3>
         <div class="card">
-          <label>নাম</label><input id="p-name">
-          <label>ছবির URL</label><input id="p-photo" placeholder="https://…">
-          <label>শিক্ষাপ্রতিষ্ঠান</label><input id="p-inst">
+          <label data-i18n="label_name">নাম</label><input id="p-name">
+          <label data-i18n="label_photo">ছবির URL</label><input id="p-photo" placeholder="https://…">
+          <label data-i18n="label_institution">শিক্ষাপ্রতিষ্ঠান</label><input id="p-inst">
           <div class="two-col">
-            <div><label>শ্রেণি</label><input id="p-class"></div>
-            <div><label>বিভাগ</label><input id="p-group" placeholder="বিজ্ঞান/মানবিক/বাণিজ্য"></div>
+            <div><label data-i18n="label_class">শ্রেণি</label><input id="p-class"></div>
+            <div><label data-i18n="label_group">বিভাগ</label><input id="p-group" data-i18n-ph="ph_group" placeholder="বিজ্ঞান/মানবিক/বাণিজ্য"></div>
           </div>
-          <button class="btn small" onclick="saveProfile()">সেভ করো</button>
+          <button class="btn small" onclick="saveProfile()" data-i18n="btn_save_profile">সেভ করো</button>
         </div>
-        <h3 style="margin-top:12px">🔑 পাসওয়ার্ড বদলাও</h3>
+        <h3 style="margin-top:12px" data-i18n="h3_change_pw">🔑 পাসওয়ার্ড বদলাও</h3>
         <div class="card">
-          <label>বর্তমান পাসওয়ার্ড</label><input id="pw-cur" type="password">
-          <label>নতুন পাসওয়ার্ড</label><input id="pw-new" type="password">
-          <button class="btn small secondary" onclick="changePw()">বদলাও</button>
+          <label data-i18n="label_cur_pw">বর্তমান পাসওয়ার্ড</label><input id="pw-cur" type="password">
+          <label data-i18n="label_new_password">নতুন পাসওয়ার্ড</label><input id="pw-new" type="password">
+          <button class="btn small secondary" onclick="changePw()" data-i18n="btn_change">বদলাও</button>
         </div>
       </div>
     </div>
 
-    <h3 style="margin-top:16px">🕘 সাম্প্রতিক পরীক্ষা</h3>
+    <h3 style="margin-top:16px" data-i18n="h3_recent">🕘 সাম্প্রতিক পরীক্ষা</h3>
     <div id="recent"></div>
-    <p style="margin-top:12px"><a href="/support.html">💬 সাপোর্ট / টিকিট</a></p>
+    <p style="margin-top:12px"><a href="/support.html" data-i18n="link_support">💬 সাপোর্ট / টিকিট</a></p>
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
 <script>
+const T = PK.lang.t;
 (async () => {
   const u = await PK.requireAuth(); if (!u) return;
   await PK.nav('dashboard');
-  document.getElementById('welcome').textContent = `👋 স্বাগতম, ${u.name}!`;
+  document.getElementById('welcome').textContent = `${T('welcome')}, ${u.name}!`;
   document.getElementById('plan-banner').innerHTML = u.plan === 'premium'
-    ? `<div class="card" style="border-color:#f5a623">⭐ <b>প্রিমিয়াম</b> সক্রিয় — মেয়াদ: ${PK.esc((u.premium_until || '').slice(0, 10))}</div>`
-    : `<div class="card">তুমি <b>ফ্রি</b> প্ল্যানে আছো — <a href="/pricing.html">প্রিমিয়াম নাও</a> (আনলিমিটেড পরীক্ষা ও প্র্যাকটিস)</div>`;
+    ? `<div class="card" style="border-color:#f5a623">⭐ <b>${T('plan_premium')}</b> ${T('active_until')} ${PK.esc((u.premium_until || '').slice(0, 10))}</div>`
+    : `<div class="card">${T('you_are_on')} <b>${T('plan_free')}</b> ${T('plan_on_msg')} — <a href="/pricing.html">${T('btn_get_premium')}</a> (${T('unlimited_msg')})</div>`;
   ['p-name','p-photo','p-inst','p-class','p-group'].forEach((id, i) =>
     document.getElementById(id).value = [u.name, u.photo_url, u.institution, u.class, u.group_name][i] || '');
 
@@ -67,21 +69,21 @@
   const totalScore = mine.reduce((s, r) => s + r.score, 0);
   const practiceAns = ph.sessions.reduce((s, x) => s + x.correct, 0);
   document.getElementById('stats').innerHTML = `
-    <div class="card"><h3>${mine.reduce((s, r) => s + r.exams_taken, 0)}</h3><p class="muted">মাসে পরীক্ষা</p></div>
-    <div class="card"><h3>${Math.round(totalScore * 100) / 100}</h3><p class="muted">মাসে মোট স্কোর</p></div>
-    <div class="card"><h3>${ph.sessions.length}</h3><p class="muted">প্র্যাকটিস সেশন</p></div>
-    <div class="card"><h3>${practiceAns}</h3><p class="muted">সঠিক প্র্যাকটিস উত্তর</p></div>`;
+    <div class="card"><h3>${mine.reduce((s, r) => s + r.exams_taken, 0)}</h3><p class="muted">${T('stat_exams_month')}</p></div>
+    <div class="card"><h3>${Math.round(totalScore * 100) / 100}</h3><p class="muted">${T('stat_score_month')}</p></div>
+    <div class="card"><h3>${ph.sessions.length}</h3><p class="muted">${T('stat_practice_sessions')}</p></div>
+    <div class="card"><h3>${practiceAns}</h3><p class="muted">${T('stat_correct_answers')}</p></div>`;
 
   const n = await PK.api('/api/notifications');
   document.getElementById('notifs').innerHTML = n.notifications.length ? n.notifications.slice(0, 8).map(x =>
     `<div class="notif ${x.is_read ? '' : 'unread'}"><b>${PK.esc(x.title)}</b><br><span class="muted">${PK.esc(x.body || '')}</span></div>`).join('')
-    : '<p class="muted">কোনো নোটিফিকেশন নেই।</p>';
+    : `<p class="muted">${T('no_notif')}</p>`;
 
   // recent submitted attempts across exams: use leaderboard monthly for simplicity
   document.getElementById('recent').innerHTML = mine.length
-    ? `<table><tr><th>পরীক্ষা</th><th>স্কোর</th><th>তারিখ</th></tr>${mine.slice(0, 5).map(r =>
+    ? `<table><tr><th>${T('th_exam')}</th><th>${T('th_score')}</th><th>${T('th_date')}</th></tr>${mine.slice(0, 5).map(r =>
       `<tr><td>—</td><td>${r.score}</td><td>${PK.esc((r.submitted_at || '').slice(0, 16))}</td></tr>`).join('')}</table>`
-    : '<p class="muted">এখনো কোনো পরীক্ষা দাওনি। <a href="/exams.html">শুরু করো →</a></p>';
+    : `<p class="muted">${T('no_exams_taken')} <a href="/exams.html">${T('start_now')}</a></p>`;
 })();
 
 async function readAll() { await PK.api('/api/notifications/read-all', { method: 'POST' }); location.reload(); }
@@ -91,14 +93,14 @@ async function saveProfile() {
       name: document.getElementById('p-name').value, photo_url: document.getElementById('p-photo').value,
       institution: document.getElementById('p-inst').value, class: document.getElementById('p-class').value,
       group: document.getElementById('p-group').value } });
-    PK.user = d.user; PK.toast('প্রোফাইল সেভ হয়েছে ✅');
+    PK.user = d.user; PK.toast(T('toast_profile_saved'));
   } catch (e) { PK.toast(e.message); }
 }
 async function changePw() {
   try {
     await PK.api('/api/auth/change-password', { method: 'PUT', body: {
       current: document.getElementById('pw-cur').value, new: document.getElementById('pw-new').value } });
-    PK.toast('পাসওয়ার্ড বদলে গেছে ✅');
+    PK.toast(T('toast_pw_changed'));
   } catch (e) { PK.toast(e.message); }
 }
 </script>

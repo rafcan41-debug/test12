@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>লিডারবোর্ড — পরীক্ষা</title>
+<title data-i18n="title_leaderboard">লিডারবোর্ড — পরীক্ষা</title>
 <link rel="stylesheet" href="/css/styles.css">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -11,20 +11,22 @@
 <header><div class="nav"></div></header>
 <div class="container">
   <div class="section">
-    <h2>🏆 লিডারবোর্ড</h2>
+    <h2 data-i18n="h2_leaderboard">🏆 লিডারবোর্ড</h2>
     <div class="tabs">
-      <button id="t-exam" class="active">পরীক্ষা অনুযায়ী</button>
-      <button id="t-daily">দৈনিক</button>
-      <button id="t-weekly">সাপ্তাহিক</button>
-      <button id="t-monthly">মাসিক</button>
+      <button id="t-exam" class="active" data-i18n="tab_by_exam">পরীক্ষা অনুযায়ী</button>
+      <button id="t-daily" data-i18n="tab_daily">দৈনিক</button>
+      <button id="t-weekly" data-i18n="tab_weekly">সাপ্তাহিক</button>
+      <button id="t-monthly" data-i18n="tab_monthly">মাসিক</button>
     </div>
-    <div id="exam-pick" style="margin-bottom:12px"><label>পরীক্ষা</label><select id="lb-exam" style="max-width:320px"></select></div>
+    <div id="exam-pick" style="margin-bottom:12px"><label data-i18n="label_exam">পরীক্ষা</label><select id="lb-exam" style="max-width:320px"></select></div>
     <div id="board"></div>
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
 <script>
 let mode = 'exam';
+const T = PK.lang.t;
 const medals = ['🥇', '🥈', '🥉'];
 (async () => {
   const u = await PK.requireAuth(); if (!u) return;
@@ -49,11 +51,11 @@ async function load() {
     : await PK.api(`/api/leaderboard/period?range=${mode}&limit=50`);
   const rows = d.leaderboard;
   document.getElementById('board').innerHTML = rows.length ? `<table>
-    <tr><th>#</th><th>নাম</th><th>স্কোর</th><th>সময়</th></tr>
+    <tr><th>#</th><th>${T('th_name')}</th><th>${T('th_score')}</th><th>${T('th_time')}</th></tr>
     ${rows.map(r => `<tr><td>${medals[r.rank - 1] || r.rank}</td><td>${PK.esc(r.name)}</td>
-      <td><b>${Math.round(r.score * 100) / 100}</b>${mode !== 'exam' ? ` (${r.exams_taken}টি পরীক্ষা)` : ''}</td>
+      <td><b>${Math.round(r.score * 100) / 100}</b>${mode !== 'exam' ? ` (${r.exams_taken}${T('exams_taken_suffix')})` : ''}</td>
       <td>${r.time_taken_sec != null ? r.time_taken_sec + 's' : '—'}</td></tr>`).join('')}
-    </table>` : '<p class="muted">এখনো কোনো ফলাফল নেই।</p>';
+    </table>` : `<p class="muted">${T('no_results')}</p>`;
 }
 </script>
 </body>

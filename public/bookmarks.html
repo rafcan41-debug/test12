@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>বুকমার্ক — পরীক্ষা</title>
+<title data-i18n="title_bookmarks">বুকমার্ক — পরীক্ষা</title>
 <link rel="stylesheet" href="/css/styles.css">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -11,13 +11,15 @@
 <header><div class="nav"></div></header>
 <div class="container">
   <div class="section">
-    <h2>🔖 সেভ করা প্রশ্ন</h2>
-    <p class="muted">কঠিন বা গুরুত্বপূর্ণ প্রশ্ন বুকমার্ক করে পরে রিভিশন দাও।</p>
+    <h2 data-i18n="h2_bookmarks">🔖 সেভ করা প্রশ্ন</h2>
+    <p class="muted" data-i18n="p_bookmarks_sub">কঠিন বা গুরুত্বপূর্ণ প্রশ্ন বুকমার্ক করে পরে রিভিশন দাও।</p>
     <div id="list"></div>
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
 <script>
+const T = PK.lang.t;
 (async () => {
   const u = await PK.requireAuth(); if (!u) return;
   await PK.nav('bookmarks');
@@ -32,16 +34,16 @@ async function load() {
       ${['a','b','c','d'].map(o => `<div class="muted">(${o.toUpperCase()}) ${PK.esc(q['option_'+o])}</div>`).join('')}
       ${q.year || q.source ? `<p class="muted">📜 ${PK.esc(q.source || '')}${q.year ? ' ' + q.year : ''}</p>` : ''}
       <div style="margin-top:8px;display:flex;gap:8px">
-        <button class="btn small secondary" onclick="reattempt(${q.id})">পুনরায় চেষ্টা</button>
-        <button class="btn small danger" onclick="removeBm(${q.id})">মুছো</button>
+        <button class="btn small secondary" onclick="reattempt(${q.id})">${T('btn_retry')}</button>
+        <button class="btn small danger" onclick="removeBm(${q.id})">${T('btn_delete')}</button>
       </div>
       <div id="fb-${q.id}"></div>
-    </div>`).join('') : '<p class="muted">কোনো বুকমার্ক নেই। প্র্যাকটিস বা রিভিউ থেকে প্রশ্ন সেভ করো।</p>';
+    </div>`).join('') : `<p class="muted">${T('no_bookmarks')}</p>`;
 }
 
 async function removeBm(qid) {
   await PK.api(`/api/bookmarks/${qid}`, { method: 'DELETE' });
-  PK.toast('মুছে ফেলা হয়েছে'); load();
+  PK.toast(T('toast_deleted')); load();
 }
 
 // Re-attempt: answer inline, get instant feedback via a lightweight practice session
@@ -56,7 +58,7 @@ async function checkRe(qid, sel) {
     const s = await PK.api('/api/practice/start', { method: 'POST', body: { limit: 1 } });
     const d = await PK.api(`/api/practice/${s.session_id}/answer`, { method: 'POST', body: { question_id: qid, selected: sel } });
     await PK.api(`/api/practice/${s.session_id}/finish`, { method: 'POST' }).catch(() => {});
-    res.innerHTML = `<div class="explain"><b>${d.correct ? '✅ সঠিক!' : '❌ ভুল — সঠিক: ' + d.correct_option.toUpperCase()}</b>${d.explanation ? '<br>' + PK.esc(d.explanation) : ''}</div>`;
+    res.innerHTML = `<div class="explain"><b>${d.correct ? T('fb_correct') : T('fb_wrong') + d.correct_option.toUpperCase()}</b>${d.explanation ? '<br>' + PK.esc(d.explanation) : ''}</div>`;
   } catch (e) { res.innerHTML = `<p class="muted">${PK.esc(e.message)}</p>`; }
 }
 </script>

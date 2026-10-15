@@ -27,6 +27,8 @@ header { background: var(--card); border-bottom: 1px solid var(--border); positi
 .nav-links { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
 .nav-links a { padding: 8px 12px; border-radius: 8px; color: var(--text); font-size: .95rem; }
 .nav-links a:hover, .nav-links a.active { background: #e7f4ec; color: var(--primary-dark); }
+.lang-toggle { padding: 8px 12px; border-radius: 8px; color: var(--text); font-size: .95rem; background: none; border: 1px solid var(--border); cursor: pointer; font-family: inherit; }
+.lang-toggle:hover { background: #e7f4ec; color: var(--primary-dark); }
 .badge { background: var(--accent); color: #3a2a00; font-size: .7rem; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
 .badge.premium { background: #ffd54d; }
 .bell { position: relative; }

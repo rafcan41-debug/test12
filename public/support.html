@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>সাপোর্ট — পরীক্ষা</title>
+<title data-i18n="title_support">সাপোর্ট — পরীক্ষা</title>
 <link rel="stylesheet" href="/css/styles.css">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -11,18 +11,18 @@
 <header><div class="nav"></div></header>
 <div class="container">
   <div class="section">
-    <h2>💬 সাপোর্ট</h2>
+    <h2 data-i18n="h2_support">💬 সাপোর্ট</h2>
     <div class="two-col">
       <div>
-        <h3>নতুন টিকিট খোলো</h3>
+        <h3 data-i18n="h3_new_ticket">নতুন টিকিট খোলো</h3>
         <div class="card">
-          <label>বিষয়</label><input id="t-sub" placeholder="যেমন: ভুল প্রশ্ন রিপোর্ট">
-          <label>বিস্তারিত</label><textarea id="t-msg" rows="4" placeholder="সমস্যাটি লিখো…"></textarea>
-          <button class="btn" onclick="createTicket()">পাঠাও</button>
+          <label data-i18n="label_subject">বিষয়</label><input id="t-sub" data-i18n-ph="ph_subject" placeholder="যেমন: ভুল প্রশ্ন রিপোর্ট">
+          <label data-i18n="label_details">বিস্তারিত</label><textarea id="t-msg" rows="4" data-i18n-ph="ph_details" placeholder="সমস্যাটি লিখো…"></textarea>
+          <button class="btn" onclick="createTicket()" data-i18n="btn_send">পাঠাও</button>
         </div>
       </div>
       <div>
-        <h3>আমার টিকিট</h3>
+        <h3 data-i18n="h3_my_tickets">আমার টিকিট</h3>
         <div id="tickets"></div>
       </div>
     </div>
@@ -30,7 +30,9 @@
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
 <script>
+const T = PK.lang.t;
 (async () => {
   const u = await PK.requireAuth(); if (!u) return;
   await PK.nav();
@@ -41,18 +43,18 @@ async function createTicket() {
   try {
     await PK.api('/api/tickets', { method: 'POST', body: {
       subject: document.getElementById('t-sub').value, message: document.getElementById('t-msg').value } });
-    PK.toast('টিকিট খোলা হয়েছে ✅'); document.getElementById('t-sub').value = ''; document.getElementById('t-msg').value = '';
+    PK.toast(T('toast_ticket_opened')); document.getElementById('t-sub').value = ''; document.getElementById('t-msg').value = '';
     load();
   } catch (e) { PK.toast(e.message); }
 }
 
 async function load() {
   const d = await PK.api('/api/tickets/mine');
-  const badge = s => s === 'open' ? '🔵 খোলা' : s === 'answered' ? '🟢 উত্তর এসেছে' : '⚫ বন্ধ';
+  const badge = s => s === 'open' ? T('ticket_open') : s === 'answered' ? T('ticket_answered') : T('ticket_closed');
   document.getElementById('tickets').innerHTML = d.tickets.length ? d.tickets.map(t =>
     `<div class="card" style="margin-bottom:8px"><b>${PK.esc(t.subject)}</b> <span class="muted">${badge(t.status)}</span><br>
-     <button class="btn small secondary" onclick="openThread(${t.id})">দেখো</button></div>`).join('')
-    : '<p class="muted">কোনো টিকিট নেই।</p>';
+     <button class="btn small secondary" onclick="openThread(${t.id})">${T('btn_view')}</button></div>`).join('')
+    : `<p class="muted">${T('no_tickets')}</p>`;
 }
 
 async function openThread(id) {
@@ -60,11 +62,11 @@ async function openThread(id) {
   const box = document.getElementById('thread');
   box.style.display = 'block';
   box.innerHTML = `<h3>${PK.esc(d.ticket.subject)} <span class="muted">(${d.ticket.status})</span></h3>
-    <div class="notif"><b>তুমি:</b> ${PK.esc(d.ticket.message)}</div>
-    ${d.replies.map(r => `<div class="notif"><b>${PK.esc(r.author_name)}${r.author_role === 'admin' ? ' (অ্যাডমিন)' : ''}:</b> ${PK.esc(r.message)}</div>`).join('')}
-    ${d.ticket.status !== 'closed' ? `<label>উত্তর লিখো</label><textarea id="reply-msg" rows="3"></textarea>
-    <button class="btn small" onclick="reply(${id})">পাঠাও</button>
-    <button class="btn small secondary" onclick="closeTicket(${id})">বন্ধ করো</button>` : ''}`;
+    <div class="notif"><b>${T('you_label')}</b> ${PK.esc(d.ticket.message)}</div>
+    ${d.replies.map(r => `<div class="notif"><b>${PK.esc(r.author_name)}${r.author_role === 'admin' ? ' ' + T('admin_suffix') : ''}:</b> ${PK.esc(r.message)}</div>`).join('')}
+    ${d.ticket.status !== 'closed' ? `<label>${T('label_reply')}</label><textarea id="reply-msg" rows="3"></textarea>
+    <button class="btn small" onclick="reply(${id})">${T('btn_send')}</button>
+    <button class="btn small secondary" onclick="closeTicket(${id})">${T('btn_close_ticket')}</button>` : ''}`;
   window.scrollTo(0, box.offsetTop);
 }
 

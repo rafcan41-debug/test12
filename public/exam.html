@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>পরীক্ষা — পরীক্ষা</title>
+<title data-i18n="title_exam">পরীক্ষা — পরীক্ষা</title>
 <link rel="stylesheet" href="/css/styles.css">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -16,8 +16,8 @@
       <h2 id="e-title"></h2>
       <p class="muted" id="e-meta"></p>
       <div id="e-prev"></div>
-      <button class="btn" id="start-btn" onclick="startExam()">▶️ পরীক্ষা শুরু করো</button>
-      <a class="btn secondary" href="/exams.html">ফিরে যাও</a>
+      <button class="btn" id="start-btn" onclick="startExam()" data-i18n="btn_start_exam">▶️ পরীক্ষা শুরু করো</button>
+      <a class="btn secondary" href="/exams.html" data-i18n="link_back">ফিরে যাও</a>
     </div>
 
     <!-- runner -->
@@ -30,9 +30,9 @@
         <h3 id="q-text"></h3>
         <div id="q-opts"></div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn secondary small" onclick="move(-1)">← আগের</button>
-          <button class="btn secondary small" onclick="move(1)">পরের →</button>
-          <button class="btn danger small" onclick="submitExam(false)">জমা দাও</button>
+          <button class="btn secondary small" onclick="move(-1)" data-i18n="btn_prev">← আগের</button>
+          <button class="btn secondary small" onclick="move(1)" data-i18n="btn_next">পরের →</button>
+          <button class="btn danger small" onclick="submitExam(false)" data-i18n="btn_submit_exam">জমা দাও</button>
         </div>
       </div>
     </div>
@@ -42,8 +42,10 @@
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
 <script>
 const examId = new URLSearchParams(location.search).get('id');
+const T = PK.lang.t;
 let attemptId = null, qs = [], answers = {}, idx = 0, endsAt = 0, timerH = null, exam = null;
 
 (async () => {
@@ -54,18 +56,18 @@ let attemptId = null, qs = [], answers = {}, idx = 0, endsAt = 0, timerH = null,
   exam = d.exam;
   document.getElementById('intro').style.display = 'block';
   document.getElementById('e-title').textContent = exam.title;
-  document.getElementById('e-meta').textContent = `⏱️ ${exam.duration_min} মিনিট • ${exam.question_limit}টি প্রশ্ন • নেগেটিভ ${exam.negative_mark} • পাস মার্ক ${exam.pass_marks}`;
+  document.getElementById('e-meta').textContent = `⏱️ ${exam.duration_min} ${T('min_unit')} • ${exam.question_limit}${T('q_count_suffix')} • ${T('negative')} ${exam.negative_mark} • ${T('pass_mark')} ${exam.pass_marks}`;
   const mine = await PK.api(`/api/exams/${examId}/my-attempts`);
   const done = mine.attempts.filter(a => a.status === 'submitted');
   if (done.length) {
-    document.getElementById('e-prev').innerHTML = '<h3>তোমার আগের ফলাফল</h3>' + done.map(a =>
-      `<p>স্কোর: <b>${a.score}/${a.total_marks}</b> (${a.percentage}%) — ${a.passed ? '<span class="pass">পাস ✅</span>' : '<span class="fail">ফেল ❌</span>'}
-       <a href="#" onclick="showReview(${a.id});return false">রিভিউ দেখো</a></p>`).join('');
+    document.getElementById('e-prev').innerHTML = `<h3>${T('prev_results')}</h3>` + done.map(a =>
+      `<p>${T('score_label')} <b>${a.score}/${a.total_marks}</b> (${a.percentage}%) — ${a.passed ? `<span class="pass">${T('pass_label')}</span>` : `<span class="fail">${T('fail_label')}</span>`}
+       <a href="#" onclick="showReview(${a.id});return false">${T('review_link')}</a></p>`).join('');
   }
   // resume in-progress attempt if any
   const prog = mine.attempts.find(a => a.status === 'in_progress');
   if (prog) {
-    document.getElementById('start-btn').textContent = '▶️ চালিয়ে যাও (আগের অসমাপ্ত পরীক্ষা)';
+    document.getElementById('start-btn').textContent = T('btn_resume');
     document.getElementById('start-btn').onclick = () => resumeAttempt(prog.id);
   }
 })();
@@ -127,7 +129,7 @@ async function autosave() {
 }
 
 async function submitExam(auto) {
-  if (!auto && !confirm('পরীক্ষা জমা দেবে?')) return;
+  if (!auto && !confirm(T('confirm_submit'))) return;
   clearInterval(timerH);
   try {
     const r = await PK.api(`/api/exams/attempts/${attemptId}/submit`, { method: 'POST', body: { answers } });
@@ -136,12 +138,12 @@ async function submitExam(auto) {
     document.getElementById('runner').style.display = 'none';
     const rv = document.getElementById('result');
     rv.style.display = 'block';
-    rv.innerHTML = `<h2>${auto ? '⏰ সময় শেষ!' : '✅'} ফলাফল</h2>
+    rv.innerHTML = `<h2>${auto ? T('time_up') : '✅'} ${T('result_title')}</h2>
       <div class="result-big">${r.score} / ${r.total_marks}</div>
-      <p>${r.percentage}% — ${r.passed ? '<span class="pass">পাস 🎉</span>' : '<span class="fail">ফেল</span>'}</p>
-      <p class="muted">সঠিক: ${r.correct_count} • ভুল: ${r.wrong_count} • উত্তর দাওনি: ${r.unanswered_count} • সময়: ${r.time_taken_sec}s</p>
-      <button class="btn" onclick="showReview(${r.attempt_id})">উত্তর রিভিউ দেখো</button>
-      <a class="btn secondary" href="/exams.html">আরো পরীক্ষা</a>`;
+      <p>${r.percentage}% — ${r.passed ? `<span class="pass">${T('pass_label')}</span>` : `<span class="fail">${T('fail_label')}</span>`}</p>
+      <p class="muted">${T('correct_c')} ${r.correct_count} • ${T('wrong_c')} ${r.wrong_count} • ${T('unanswered_c')} ${r.unanswered_count} • ${T('time_c')} ${r.time_taken_sec}s</p>
+      <button class="btn" onclick="showReview(${r.attempt_id})">${T('btn_review_answers')}</button>
+      <a class="btn secondary" href="/exams.html">${T('more_exams')}</a>`;
   } catch (e) { PK.toast(e.message); }
 }
 
@@ -151,11 +153,11 @@ async function showReview(id) {
   rv.style.display = 'block';
   document.getElementById('intro').style.display = 'none';
   document.getElementById('runner').style.display = 'none';
-  rv.innerHTML = '<h2>📋 উত্তর রিভিউ</h2>' + d.review.map((q, i) => `
+  rv.innerHTML = `<h2>${T('review_title')}</h2>` + d.review.map((q, i) => `
     <div class="card" style="margin-bottom:10px">
       <b>${i + 1}. ${PK.esc(q.question_text)}</b>
-      ${['a','b','c','d'].map(o => `<div class="option ${o === q.correct_option ? 'correct' : ''} ${o === q.selected && o !== q.correct_option ? 'wrong' : ''}" style="cursor:default"><b>${o.toUpperCase()}.</b> ${PK.esc(q['option_'+o])}${o === q.selected ? ' ← তোমার উত্তর' : ''}</div>`).join('')}
-      ${q.explanation ? `<div class="explain"><b>ব্যাখ্যা:</b> ${PK.esc(q.explanation)}</div>` : ''}
+      ${['a','b','c','d'].map(o => `<div class="option ${o === q.correct_option ? 'correct' : ''} ${o === q.selected && o !== q.correct_option ? 'wrong' : ''}" style="cursor:default"><b>${o.toUpperCase()}.</b> ${PK.esc(q['option_'+o])}${o === q.selected ? T('your_answer') : ''}</div>`).join('')}
+      ${q.explanation ? `<div class="explain"><b>${T('explanation_label')}</b> ${PK.esc(q.explanation)}</div>` : ''}
       ${q.year || q.source ? `<p class="muted" style="margin-top:6px">📜 ${PK.esc(q.source || '')}${q.year ? ' ' + q.year : ''}</p>` : ''}
     </div>`).join('');
 }

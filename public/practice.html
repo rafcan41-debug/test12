@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>প্র্যাকটিস — পরীক্ষা</title>
+<title data-i18n="title_practice">প্র্যাকটিস — পরীক্ষা</title>
 <link rel="stylesheet" href="/css/styles.css">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -11,40 +11,40 @@
 <header><div class="nav"></div></header>
 <div class="container">
   <div class="section">
-    <h2>⚡ কুইক প্র্যাকটিস</h2>
+    <h2 data-i18n="h2_practice">⚡ কুইক প্র্যাকটিস</h2>
 
     <div id="setup" class="card">
       <div class="two-col">
         <div>
-          <label>ক্যাটাগরি</label><select id="f-cat"><option value="">— সব —</option></select>
-          <label>বিষয়</label><select id="f-sub"><option value="">— সব —</option></select>
+          <label data-i18n="label_category">ক্যাটাগরি</label><select id="f-cat"><option value="" data-i18n="opt_all">— সব —</option></select>
+          <label data-i18n="label_subject">বিষয়</label><select id="f-sub"><option value="" data-i18n="opt_all">— সব —</option></select>
         </div>
         <div>
-          <label>অধ্যায়</label><select id="f-ch"><option value="">— সব —</option></select>
-          <label>টপিক</label><select id="f-tp"><option value="">— সব —</option></select>
+          <label data-i18n="label_chapter">অধ্যায়</label><select id="f-ch"><option value="" data-i18n="opt_all">— সব —</option></select>
+          <label data-i18n="label_topic">টপিক</label><select id="f-tp"><option value="" data-i18n="opt_all">— সব —</option></select>
         </div>
       </div>
       <div class="two-col">
         <div>
-          <label>কাঠিন্য</label>
-          <select id="f-diff"><option value="">— সব —</option><option value="easy">সহজ</option><option value="medium">মাঝারি</option><option value="hard">কঠিন</option></select>
+          <label data-i18n="label_difficulty">কাঠিন্য</label>
+          <select id="f-diff"><option value="" data-i18n="opt_all">— সব —</option><option value="easy" data-i18n="diff_easy">সহজ</option><option value="medium" data-i18n="diff_medium">মাঝারি</option><option value="hard" data-i18n="diff_hard">কঠিন</option></select>
         </div>
         <div>
-          <label>প্রশ্ন সংখ্যা</label>
+          <label data-i18n="label_qcount">প্রশ্ন সংখ্যা</label>
           <select id="f-limit"><option>5</option><option selected>10</option><option>20</option><option>30</option></select>
         </div>
       </div>
-      <h3 style="margin-top:12px">📜 বিগত বছরের প্রশ্ন</h3>
+      <h3 style="margin-top:12px" data-i18n="h3_prev_year">📜 বিগত বছরের প্রশ্ন</h3>
       <div class="two-col">
         <div>
-          <label><input type="checkbox" id="f-prevyear" style="width:auto"> শুধু বিগত বছরের প্রশ্ন</label>
-          <label>বছর (যেমন 2024)</label><input id="f-year" type="number" min="1990" max="2100" placeholder="যেমন: 2024">
+          <label><input type="checkbox" id="f-prevyear" style="width:auto"> <span data-i18n="label_prev_only">শুধু বিগত বছরের প্রশ্ন</span></label>
+          <label data-i18n="label_year">বছর (যেমন 2024)</label><input id="f-year" type="number" min="1990" max="2100" data-i18n-ph="ph_year" placeholder="যেমন: 2024">
         </div>
         <div>
-          <label>উৎস (যেমন: SSC Dhaka Board)</label><input id="f-source" placeholder="যেমন: Medical Admission">
+          <label data-i18n="label_source">উৎস (যেমন: SSC Dhaka Board)</label><input id="f-source" data-i18n-ph="ph_source" placeholder="যেমন: Medical Admission">
         </div>
       </div>
-      <button class="btn" onclick="startPractice()">প্র্যাকটিস শুরু করো</button>
+      <button class="btn" onclick="startPractice()" data-i18n="btn_start_practice">প্র্যাকটিস শুরু করো</button>
     </div>
 
     <div id="run" style="display:none">
@@ -54,21 +54,24 @@
         </div>
         <div id="p-q"></div>
         <div style="margin-top:12px;display:flex;gap:8px">
-          <button class="btn secondary" id="p-next" onclick="nextQ()" disabled>পরের প্রশ্ন →</button>
-          <button class="btn danger" onclick="finishSession()">শেষ করো</button>
+          <button class="btn secondary" id="p-next" onclick="nextQ()" disabled data-i18n="btn_next_q">পরের প্রশ্ন →</button>
+          <button class="btn danger" onclick="finishSession()" data-i18n="btn_finish">শেষ করো</button>
         </div>
       </div>
     </div>
 
     <div id="done" class="card" style="display:none"></div>
 
-    <h2 style="margin-top:24px">🕘 প্র্যাকটিস হিস্ট্রি</h2>
+    <h2 style="margin-top:24px" data-i18n="h2_history">🕘 প্র্যাকটিস হিস্ট্রি</h2>
     <div id="history"></div>
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
 <script>
 let CAT = [], sessionId = null, qs = [], idx = 0, correct = 0, answered = 0;
+const T = PK.lang.t;
+const ALL = () => `<option value="">${T('opt_all')}</option>`;
 
 (async () => {
   const u = await PK.requireAuth(); if (!u) return;
@@ -79,14 +82,14 @@ let CAT = [], sessionId = null, qs = [], idx = 0, correct = 0, answered = 0;
   CAT.forEach(c => cs.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
   cs.onchange = () => {
     const c = CAT.find(x => x.id == cs.value);
-    const ss = document.getElementById('f-sub'); ss.innerHTML = '<option value="">— সব —</option>';
+    const ss = document.getElementById('f-sub'); ss.innerHTML = ALL();
     (c ? c.subjects : []).forEach(s => ss.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
     ss.onchange();
   };
   document.getElementById('f-sub').onchange = (e) => {
     const c = CAT.find(x => x.id == cs.value);
     const s = c && c.subjects.find(x => x.id == (e.target ? e.target.value : document.getElementById('f-sub').value));
-    const ch = document.getElementById('f-ch'); ch.innerHTML = '<option value="">— সব —</option>';
+    const ch = document.getElementById('f-ch'); ch.innerHTML = ALL();
     (s ? s.chapters : []).forEach(x => ch.innerHTML += `<option value="${x.id}">${PK.esc(x.name_bn)}</option>`);
     ch.onchange();
   };
@@ -94,7 +97,7 @@ let CAT = [], sessionId = null, qs = [], idx = 0, correct = 0, answered = 0;
     const c = CAT.find(x => x.id == cs.value);
     const s = c && c.subjects.find(x => x.id == document.getElementById('f-sub').value);
     const chh = s && s.chapters.find(x => x.id == document.getElementById('f-ch').value);
-    const tp = document.getElementById('f-tp'); tp.innerHTML = '<option value="">— সব —</option>';
+    const tp = document.getElementById('f-tp'); tp.innerHTML = ALL();
     (chh ? chh.topics : []).forEach(x => tp.innerHTML += `<option value="${x.id}">${PK.esc(x.name_bn)}</option>`);
   };
   loadHistory();
@@ -123,9 +126,10 @@ async function startPractice() {
 
 function renderQ() {
   const q = qs[idx];
-  document.getElementById('p-progress').textContent = `প্রশ্ন ${idx + 1} / ${qs.length}`;
-  document.getElementById('p-score').textContent = `সঠিক: ${correct}`;
+  document.getElementById('p-progress').textContent = `${T('q_progress')} ${idx + 1} / ${qs.length}`;
+  document.getElementById('p-score').textContent = `${T('correct_label')} ${correct}`;
   document.getElementById('p-next').disabled = true;
+  document.getElementById('p-next').textContent = T('btn_next_q');
   document.getElementById('p-q').innerHTML = `
     <h3 style="margin:12px 0">${PK.esc(q.question_text)}</h3>
     ${['a','b','c','d'].map(o => `<button class="option" data-o="${o}" onclick="answer('${o}')"><b>${o.toUpperCase()}.</b> ${PK.esc(q['option_'+o])}</button>`).join('')}
@@ -144,10 +148,10 @@ async function answer(sel) {
       else if (b.dataset.o === sel) b.classList.add('wrong');
     });
     document.getElementById('p-fb').innerHTML = `
-      <div class="explain"><b>${d.correct ? '✅ সঠিক!' : '❌ ভুল — সঠিক উত্তর: ' + d.correct_option.toUpperCase()}</b>
+      <div class="explain"><b>${d.correct ? T('fb_correct') : T('fb_wrong_answer') + d.correct_option.toUpperCase()}</b>
       ${d.explanation ? '<br>' + PK.esc(d.explanation) : ''}</div>`;
     document.getElementById('p-next').disabled = false;
-    document.getElementById('p-next').textContent = idx + 1 < qs.length ? 'পরের প্রশ্ন →' : 'ফলাফল দেখো';
+    document.getElementById('p-next').textContent = idx + 1 < qs.length ? T('btn_next_q') : T('btn_show_result');
   } catch (e) { PK.toast(e.message); }
 }
 
@@ -161,8 +165,8 @@ async function finishSession() {
   document.getElementById('run').style.display = 'none';
   const d = document.getElementById('done');
   d.style.display = 'block';
-  d.innerHTML = `<h2>🎉 সেশন শেষ!</h2><p>মোট প্রশ্ন: ${qs.length} | সঠিক: <b class="pass">${correct}</b> | ভুল: <b class="fail">${answered - correct}</b></p>
-    <button class="btn" onclick="location.reload()">নতুন প্র্যাকটিস</button>`;
+  d.innerHTML = `<h2>${T('session_done')}</h2><p>${T('total_q')} ${qs.length} | ${T('correct_label')} <b class="pass">${correct}</b> | ${T('wrong_label')} <b class="fail">${answered - correct}</b></p>
+    <button class="btn" onclick="location.reload()">${T('btn_new_practice')}</button>`;
   loadHistory();
 }
 
@@ -170,9 +174,9 @@ async function loadHistory() {
   try {
     const d = await PK.api('/api/practice/history');
     document.getElementById('history').innerHTML = d.sessions.length ? `<table>
-      <tr><th>তারিখ</th><th>মোট</th><th>সঠিক</th><th>অবস্থা</th></tr>
-      ${d.sessions.map(s => `<tr><td>${PK.esc(s.created_at.slice(0,16))}</td><td>${s.total}</td><td>${s.correct}</td><td>${s.status === 'finished' ? 'শেষ' : 'চলমান'}</td></tr>`).join('')}
-      </table>` : '<p class="muted">এখনো কোনো প্র্যাকটিস হয়নি।</p>';
+      <tr><th>${T('th_date')}</th><th>${T('th_total')}</th><th>${T('th_correct')}</th><th>${T('th_status')}</th></tr>
+      ${d.sessions.map(s => `<tr><td>${PK.esc(s.created_at.slice(0,16))}</td><td>${s.total}</td><td>${s.correct}</td><td>${s.status === 'finished' ? T('status_finished') : T('status_ongoing')}</td></tr>`).join('')}
+      </table>` : `<p class="muted">${T('no_practice')}</p>`;
   } catch (e) {}
 }
 </script>
