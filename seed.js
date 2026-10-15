@@ -2,7 +2,7 @@
 // one sample exam, and the default admin user. Idempotent (runs once).
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { db, initSchema } = require('./src/db');
+const { db, initSchema, ensurePrimaryExtraSubjects } = require('./src/db');
 
 initSchema();
 
@@ -44,6 +44,7 @@ CATS.forEach(([slug, bn, en, subjects], i) => {
   const existing = db.prepare('SELECT COUNT(*) c FROM subjects WHERE category_id = ?').get(cat.id).c;
   if (!existing) for (const [sbn, sen] of subjects) subIns.run(cat.id, sbn, sen);
 });
+ensurePrimaryExtraSubjects(); // fixed ids 40/41 (also runs on boot via initSchema for older DBs)
 
 function subjectId(catSlug, nameBn) {
   return db.prepare(
