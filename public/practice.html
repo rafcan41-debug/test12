@@ -18,6 +18,9 @@
         <div>
           <label data-i18n="label_category">ক্যাটাগরি</label><select id="f-cat"><option value="" data-i18n="opt_all">— সব —</option></select>
           <label data-i18n="label_subject">বিষয়</label><select id="f-sub"><option value="" data-i18n="opt_all">— সব —</option></select>
+          <div id="grp-wrap" style="display:none">
+            <label data-i18n="label_grp_filter">গ্রুপ</label><select id="f-grp"><option value="" data-i18n="opt_all">— সব —</option></select>
+          </div>
         </div>
         <div>
           <label data-i18n="label_chapter">অধ্যায়</label><select id="f-ch"><option value="" data-i18n="opt_all">— সব —</option></select>
@@ -80,12 +83,26 @@ const ALL = () => `<option value="">${T('opt_all')}</option>`;
   CAT = d.categories;
   const cs = document.getElementById('f-cat');
   CAT.forEach(c => cs.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
+  const GRPS = ['common', 'science', 'business', 'humanities'];
+  const grpSelect = document.getElementById('f-grp'), grpWrap = document.getElementById('grp-wrap');
+  function fillSubjects(c) {
+    const g = grpWrap.style.display === 'block' ? grpSelect.value : '';
+    const ss = document.getElementById('f-sub'); ss.innerHTML = ALL();
+    (c ? c.subjects.filter(s => !g || s.grp === g) : []).forEach(s => ss.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
+    ss.onchange();
+  }
   cs.onchange = () => {
     const c = CAT.find(x => x.id == cs.value);
-    const ss = document.getElementById('f-sub'); ss.innerHTML = ALL();
-    (c ? c.subjects : []).forEach(s => ss.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
-    ss.onchange();
+    if (c && c.slug === 'ssc') {
+      grpWrap.style.display = 'block';
+      grpSelect.innerHTML = ALL();
+      GRPS.forEach(g => grpSelect.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
+    } else {
+      grpWrap.style.display = 'none'; grpSelect.value = '';
+    }
+    fillSubjects(c);
   };
+  grpSelect.onchange = () => fillSubjects(CAT.find(x => x.id == cs.value));
   document.getElementById('f-sub').onchange = (e) => {
     const c = CAT.find(x => x.id == cs.value);
     const s = c && c.subjects.find(x => x.id == (e.target ? e.target.value : document.getElementById('f-sub').value));

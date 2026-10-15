@@ -11,8 +11,23 @@
 <header><div class="nav"></div></header>
 <div class="container">
   <div class="section">
+    <h2 data-i18n="h2_quick_test">⚡ কুইক অধ্যায় টেস্ট</h2>
+    <p class="muted" data-i18n="quick_test_desc">ক্লাস → বিষয় → অধ্যায় বেছে নিয়ে সাথে সাথে টেস্ট দাও।</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+      <div><label data-i18n="label_class">ক্লাস</label><br><select id="q-cat" style="min-width:180px"><option value="" data-i18n="opt_all">— সব —</option></select></div>
+      <div id="q-grp-wrap" style="display:none"><label data-i18n="label_grp_filter">গ্রুপ</label><br><select id="q-grp" style="min-width:180px"><option value="" data-i18n="opt_all">— সব —</option></select></div>
+      <div><label data-i18n="label_subject">বিষয়</label><br><select id="q-sub" style="min-width:180px"><option value="" data-i18n="opt_select">— বাছাই করো —</option></select></div>
+      <div><label data-i18n="label_chapter">অধ্যায়</label><br><select id="q-chap" style="min-width:180px"><option value="" data-i18n="opt_all_chapters">— সব অধ্যায় —</option></select></div>
+      <div><label data-i18n="label_qcount">প্রশ্ন সংখ্যা</label><br><select id="q-limit" style="min-width:100px">
+        <option value="10">10</option><option value="20" selected>20</option><option value="30">30</option><option value="50">50</option>
+      </select></div>
+    </div>
+    <button class="btn" id="q-start" data-i18n="btn_start_quick">⚡ টেস্ট শুরু করো</button>
+  </div>
+
+  <div class="section">
     <h2 data-i18n="h2_exams">📝 মডেল টেস্ট</h2>
-    <div style="margin-bottom:12px"><label data-i18n="filter_category">ক্যাটাগরি ফিল্টার</label><select id="f-cat" style="max-width:320px"><option value="" data-i18n="opt_all">— সব —</option></select></div>
+    <div style="margin-bottom:12px"><label data-i18n="filter_category">ক্যাটাগরি ফিল্টার</label> <select id="f-cat" style="max-width:320px"><option value="" data-i18n="opt_all">— সব —</option></select><span id="f-grp-wrap" style="display:none;margin-left:12px"><label data-i18n="label_grp_filter">গ্রুপ</label> <select id="f-grp" style="max-width:220px"><option value="" data-i18n="opt_all">— সব —</option></select></span></div>
     <div class="grid" id="exams"></div>
   </div>
 </div>
@@ -27,11 +42,74 @@ const T = PK.lang.t;
   const sel = document.getElementById('f-cat');
   const urlCat = new URLSearchParams(location.search).get('cat');
   cat.categories.forEach(c => sel.innerHTML += `<option value="${c.id}" ${urlCat == c.id ? 'selected' : ''}>${PK.esc(c.name_bn)}</option>`);
-  sel.onchange = load;
+  sel.onchange = () => {
+    const c = cat.categories.find(x => x.id == sel.value);
+    const fw = document.getElementById('f-grp-wrap'), fs = document.getElementById('f-grp');
+    if (c && c.slug === 'ssc') {
+      fw.style.display = 'inline';
+      fs.innerHTML = `<option value="">${T('opt_all')}</option>`;
+      ['common', 'science', 'business', 'humanities'].forEach(g => fs.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
+    } else { fw.style.display = 'none'; fs.value = ''; }
+    load();
+  };
+  document.getElementById('f-grp').onchange = load;
+  if (urlCat) sel.onchange();
   load();
+
+  // --- quick chapter test ---
+  const qCat = document.getElementById('q-cat'), qSub = document.getElementById('q-sub'),
+        qChap = document.getElementById('q-chap'), qLimit = document.getElementById('q-limit');
+  let catalog = cat;
+  cat.categories.forEach(c => qCat.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
+  const QGRPS = ['common', 'science', 'business', 'humanities'];
+  function fillQSubjects(c) {
+    const g = document.getElementById('q-grp-wrap').style.display === 'block' ? document.getElementById('q-grp').value : '';
+    qSub.innerHTML = `<option value="">${T('opt_select')}</option>`;
+    (c ? c.subjects.filter(s => !g || s.grp === g) : []).forEach(s => qSub.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
+  }
+  qCat.onchange = () => {
+    qChap.innerHTML = `<option value="">${T('opt_all_chapters')}</option>`;
+    const c = catalog.categories.find(x => x.id == qCat.value);
+    const qw = document.getElementById('q-grp-wrap'), qgs = document.getElementById('q-grp');
+    if (c && c.slug === 'ssc') {
+      qw.style.display = 'block';
+      qgs.innerHTML = `<option value="">${T('opt_all')}</option>`;
+      QGRPS.forEach(g => qgs.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
+    } else { qw.style.display = 'none'; qgs.value = ''; }
+    fillQSubjects(c);
+  };
+  document.getElementById('q-grp').onchange = () => {
+    fillQSubjects(catalog.categories.find(x => x.id == qCat.value));
+    qChap.innerHTML = `<option value="">${T('opt_all_chapters')}</option>`;
+  };
+  qSub.onchange = () => {
+    qChap.innerHTML = `<option value="">${T('opt_all_chapters')}</option>`;
+    const c = catalog.categories.find(x => x.id == qCat.value);
+    const s = c ? c.subjects.find(x => x.id == qSub.value) : null;
+    ((s && s.chapters) ? s.chapters : []).forEach(ch => qChap.innerHTML += `<option value="${ch.id}">${PK.esc(ch.name_bn)}</option>`);
+  };
+  document.getElementById('q-start').onclick = async () => {
+    if (!qSub.value) { PK.toast(T('pick_subject_first')); return; }
+    try {
+      const d = await PK.api('/api/exams/quick', { method: 'POST',
+        body: { subject_id: qSub.value, chapter_id: qChap.value || null, limit: qLimit.value } });
+      location.href = '/exam.html?id=' + d.exam_id;
+    } catch (e) { PK.toast(e.message); }
+  };
   async function load() {
     const d = await PK.api('/api/exams');
-    const list = d.exams.filter(e => !sel.value || e.category_id == sel.value);
+    const gv = document.getElementById('f-grp').value;
+    const list = d.exams.filter(e => {
+      if (sel.value && e.category_id != sel.value) return false;
+      if (gv) {
+        let sid = null;
+        try { sid = JSON.parse(e.filter_json || '{}').subject_id; } catch (_) {}
+        const c = cat.categories.find(x => x.id == e.category_id);
+        const s = c && c.subjects.find(x => x.id == sid);
+        if (!s || s.grp !== gv) return false;
+      }
+      return true;
+    });
     document.getElementById('exams').innerHTML = list.length ? list.map(e => `
       <div class="card">
         <h3>${PK.esc(e.title)}</h3>
