@@ -98,3 +98,9 @@ footer { background: #12211a; color: #b9cdc2; padding: 32px 16px; margin-top: 48
   .two-col { grid-template-columns: 1fr; }
   .nav-links a { padding: 6px 8px; font-size: .85rem; }
 }
+
+/* custom exam checkbox lists */
+.check-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin-top: 8px; }
+.check { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; background: #fff; }
+.check:hover { border-color: #38bdf8; background: #f0f9ff; }
+.check input { width: auto; margin: 0; }

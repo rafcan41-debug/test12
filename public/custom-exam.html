@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="title_custom_exam">কাস্টম পরীক্ষা — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <h2 data-i18n="h2_custom_exam">🎯 কাস্টম পরীক্ষা</h2>
+    <p class="muted" data-i18n="custom_exam_desc">বিষয়, অধ্যায়, টপিক বেছে নাও — প্রশ্ন সংখ্যা ঠিক করো — নিজের পরীক্ষা নিজে বানাও।</p>
+
+    <div class="card">
+      <div class="two-col">
+        <div>
+          <label data-i18n="label_class">ক্লাস</label>
+          <select id="c-cat"><option value="" data-i18n="opt_select">— বাছাই করো —</option></select>
+        </div>
+        <div id="c-grp-wrap" style="display:none">
+          <label data-i18n="label_grp_filter">গ্রুপ</label>
+          <select id="c-grp"><option value="" data-i18n="opt_all">— সব —</option></select>
+        </div>
+      </div>
+
+      <div id="step-sub" style="display:none;margin-top:12px">
+        <h3 data-i18n="h3_pick_subjects">📚 বিষয় বাছাই করো (একাধিক)</h3>
+        <div id="c-subs" class="check-list"></div>
+      </div>
+
+      <div id="step-ch" style="display:none;margin-top:12px">
+        <h3 data-i18n="h3_pick_chapters">📖 অধ্যায় বাছাই করো (একাধিক, ঐচ্ছিক)</h3>
+        <div id="c-chs" class="check-list"></div>
+      </div>
+
+      <div id="step-tp" style="display:none;margin-top:12px">
+        <h3 data-i18n="h3_pick_topics">🏷️ টপিক বাছাই করো (একাধিক, ঐচ্ছিক)</h3>
+        <div id="c-tps" class="check-list"></div>
+      </div>
+
+      <div style="margin-top:16px" class="two-col">
+        <div>
+          <label data-i18n="label_qcount_custom">মোট প্রশ্ন সংখ্যা</label>
+          <input id="c-limit" type="number" min="5" max="200" value="20">
+        </div>
+        <div>
+          <label>&nbsp;</label><br>
+          <button class="btn" id="c-start" onclick="startCustom()" data-i18n="btn_start_custom">🚀 কাস্টম পরীক্ষা শুরু করো</button>
+        </div>
+      </div>
+      <p class="muted" id="c-avail" style="margin-top:8px"></p>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
+<script>
+const T = PK.lang.t;
+let CAT = [], curCat = null;
+
+const checked = (boxId) => [...document.querySelectorAll(`#${boxId} input:checked`)].map(i => Number(i.value));
+
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  await PK.nav('custom-exam');
+  const d = await PK.api('/api/catalog');
+  CAT = d.categories;
+  const cs = document.getElementById('c-cat');
+  CAT.forEach(c => cs.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
+  cs.onchange = onCat;
+  document.getElementById('c-grp').onchange = renderSubjects;
+})();
+
+function onCat() {
+  curCat = CAT.find(x => x.id == document.getElementById('c-cat').value) || null;
+  const gw = document.getElementById('c-grp-wrap'), gs = document.getElementById('c-grp');
+  if (curCat && (curCat.slug === 'ssc' || curCat.slug === 'hsc')) {
+    gw.style.display = 'block';
+    gs.innerHTML = `<option value="">${T('opt_all')}</option>`;
+    ['common', 'science', 'business', 'humanities'].forEach(g => gs.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
+  } else { gw.style.display = 'none'; gs.value = ''; }
+  renderSubjects();
+}
+
+function renderSubjects() {
+  const g = document.getElementById('c-grp').value;
+  const box = document.getElementById('c-subs');
+  const subs = curCat ? curCat.subjects.filter(s => !g || s.grp === g) : [];
+  document.getElementById('step-sub').style.display = subs.length ? 'block' : 'none';
+  box.innerHTML = subs.map(s => `<label class="check"><input type="checkbox" value="${s.id}" onchange="renderChapters()"> ${PK.esc(s.name_bn)}</label>`).join('');
+  renderChapters();
+}
+
+function selSubjects() {
+  const ids = checked('c-subs');
+  return curCat ? curCat.subjects.filter(s => ids.includes(s.id)) : [];
+}
+
+function renderChapters() {
+  const subs = selSubjects();
+  const allCh = subs.flatMap(s => (s.chapters || []).map(c => ({ ...c, _sub: s.name_bn })));
+  document.getElementById('step-ch').style.display = allCh.length ? 'block' : 'none';
+  document.getElementById('c-chs').innerHTML = allCh.map(c =>
+    `<label class="check"><input type="checkbox" value="${c.id}" onchange="renderTopics()"> ${PK.esc(c.name_bn)} <span class="muted">(${PK.esc(c._sub)})</span></label>`).join('');
+  renderTopics();
+}
+
+function renderTopics() {
+  const chIds = checked('c-chs');
+  const subs = selSubjects();
+  const allTp = subs.flatMap(s => (s.chapters || [])).filter(c => chIds.includes(c.id))
+    .flatMap(c => (c.topics || []).map(t => ({ ...t, _ch: c.name_bn })));
+  document.getElementById('step-tp').style.display = allTp.length ? 'block' : 'none';
+  document.getElementById('c-tps').innerHTML = allTp.map(t =>
+    `<label class="check"><input type="checkbox" value="${t.id}"> ${PK.esc(t.name_bn)} <span class="muted">(${PK.esc(t._ch)})</span></label>`).join('');
+}
+
+async function startCustom() {
+  const subject_ids = checked('c-subs');
+  if (!subject_ids.length) { PK.toast(T('pick_subject_first')); return; }
+  const body = {
+    subject_ids,
+    chapter_ids: checked('c-chs'),
+    topic_ids: checked('c-tps'),
+    limit: Math.min(200, Math.max(5, Number(document.getElementById('c-limit').value) || 20)),
+  };
+  try {
+    const d = await PK.api('/api/exams/custom', { method: 'POST', body });
+    location.href = '/exam.html?id=' + d.exam_id;
+  } catch (e) { PK.toast(e.message); }
+}
+</script>
+</body>
+</html>

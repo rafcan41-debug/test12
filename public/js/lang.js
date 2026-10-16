@@ -42,6 +42,18 @@ label_class: 'ক্লাস', label_subject: 'বিষয়', label_chapter:
 label_grp_filter: 'গ্রুপ', grp_common: 'সাধারণ', grp_science: 'বিজ্ঞান', grp_business: 'ব্যবসায় শিক্ষা', grp_humanities: 'মানবিক',
 opt_select: '— বাছাই করো —', opt_all_chapters: '— সব অধ্যায় —',
 btn_start_quick: '⚡ টেস্ট শুরু করো', pick_subject_first: 'আগে বিষয় বাছাই করো',
+// ---- custom exam ----
+nav_custom: '🎯 কাস্টম', title_custom_exam: 'কাস্টম পরীক্ষা — পরীক্ষা', h2_custom_exam: '🎯 কাস্টম পরীক্ষা',
+custom_exam_desc: 'বিষয়, অধ্যায়, টপিক বেছে নাও — প্রশ্ন সংখ্যা ঠিক করো — নিজের পরীক্ষা নিজে বানাও।',
+h3_pick_subjects: '📚 বিষয় বাছাই করো (একাধিক)', h3_pick_chapters: '📖 অধ্যায় বাছাই করো (একাধিক, ঐচ্ছিক)',
+h3_pick_topics: '🏷️ টপিক বাছাই করো (একাধিক, ঐচ্ছিক)', label_qcount_custom: 'মোট প্রশ্ন সংখ্যা',
+btn_start_custom: '🚀 কাস্টম পরীক্ষা শুরু করো',
+// ---- result filters ----
+filter_all: 'সবগুলো', filter_correct: 'সঠিক', filter_wrong: 'ভুল', filter_skipped: 'উত্তর দাওনি',
+filter_empty: 'এই ফিল্টারে কোনো প্রশ্ন নেই।',
+pick_subject_first: 'আগে বিষয় বাছাই করো', pick_chapter_first: 'আগে অধ্যায় বাছাই করো',
+no_chapters: 'কোনো অধ্যায় নেই', no_topics: 'কোনো টপিক নেই',
+multi_hint: '(একাধিক বাছাই করা যাবে)',
 // ---- leaderboard ----
 title_leaderboard: 'লিডারবোর্ড — পরীক্ষা', h2_leaderboard: '🏆 লিডারবোর্ড',
 tab_by_exam: 'পরীক্ষা অনুযায়ী', tab_daily: 'দৈনিক', tab_weekly: 'সাপ্তাহিক', tab_monthly: 'মাসিক',
@@ -222,6 +234,18 @@ label_class: 'Class', label_subject: 'Subject', label_chapter: 'Chapter', label_
 label_grp_filter: 'Group', grp_common: 'Common', grp_science: 'Science', grp_business: 'Business Studies', grp_humanities: 'Humanities',
 opt_select: '— Select —', opt_all_chapters: '— All chapters —',
 btn_start_quick: '⚡ Start Test', pick_subject_first: 'Pick a subject first',
+// ---- custom exam ----
+nav_custom: '🎯 Custom', title_custom_exam: 'Custom Exam — Porikkha', h2_custom_exam: '🎯 Custom Exam',
+custom_exam_desc: 'Pick subjects, chapters, topics — set the question count — build your own exam.',
+h3_pick_subjects: '📚 Pick subjects (multiple)', h3_pick_chapters: '📖 Pick chapters (multiple, optional)',
+h3_pick_topics: '🏷️ Pick topics (multiple, optional)', label_qcount_custom: 'Total questions',
+btn_start_custom: '🚀 Start Custom Exam',
+// ---- result filters ----
+filter_all: 'All', filter_correct: 'Correct', filter_wrong: 'Wrong', filter_skipped: 'Skipped',
+filter_empty: 'No questions in this filter.',
+pick_subject_first: 'Select a subject first', pick_chapter_first: 'Select chapters first',
+no_chapters: 'No chapters', no_topics: 'No topics',
+multi_hint: '(multiple allowed)',
 // ---- leaderboard ----
 title_leaderboard: 'Leaderboard — Porikkha', h2_leaderboard: '🏆 Leaderboard',
 tab_by_exam: 'By Exam', tab_daily: 'Daily', tab_weekly: 'Weekly', tab_monthly: 'Monthly',

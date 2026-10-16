@@ -23,8 +23,10 @@
           </div>
         </div>
         <div>
-          <label data-i18n="label_chapter">অধ্যায়</label><select id="f-ch"><option value="" data-i18n="opt_all">— সব —</option></select>
-          <label data-i18n="label_topic">টপিক</label><select id="f-tp"><option value="" data-i18n="opt_all">— সব —</option></select>
+          <label data-i18n="label_chapter">অধ্যায়</label>
+          <div id="f-ch-list" class="check-list"><span class="muted" data-i18n="pick_subject_first">আগে বিষয় বাছাই করো</span></div>
+          <label data-i18n="label_topic">টপিক</label>
+          <div id="f-tp-list" class="check-list"><span class="muted" data-i18n="pick_chapter_first">আগে অধ্যায় বাছাই করো</span></div>
         </div>
       </div>
       <div class="two-col">
@@ -85,15 +87,36 @@ const ALL = () => `<option value="">${T('opt_all')}</option>`;
   CAT.forEach(c => cs.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
   const GRPS = ['common', 'science', 'business', 'humanities'];
   const grpSelect = document.getElementById('f-grp'), grpWrap = document.getElementById('grp-wrap');
+  const checkedIds = (el) => [...el.querySelectorAll('input[type=checkbox]:checked')].map(x => Number(x.value));
   function fillSubjects(c) {
     const g = grpWrap.style.display === 'block' ? grpSelect.value : '';
     const ss = document.getElementById('f-sub'); ss.innerHTML = ALL();
-    (c ? c.subjects.filter(s => !g || s.grp === g) : []).forEach(s => ss.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
-    ss.onchange();
+    (c ? c.subjects.filter(s => !g || s.grp === g || s.grp === 'common') : []).forEach(s => ss.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
+    fillChapters();
+  }
+  function fillChapters() {
+    const c = CAT.find(x => x.id == cs.value);
+    const s = c && c.subjects.find(x => x.id == document.getElementById('f-sub').value);
+    const box = document.getElementById('f-ch-list');
+    const chs = (s && s.chapters) || [];
+    box.innerHTML = chs.length ? chs.map(x => `<label class="check"><input type="checkbox" value="${x.id}"> ${PK.esc(x.name_bn)}</label>`).join('') : `<span class="muted">${T('no_chapters')}</span>`;
+    box.querySelectorAll('input').forEach(i => i.onchange = fillTopics);
+    fillTopics();
+  }
+  function fillTopics() {
+    const c = CAT.find(x => x.id == cs.value);
+    const s = c && c.subjects.find(x => x.id == document.getElementById('f-sub').value);
+    const selCh = checkedIds(document.getElementById('f-ch-list'));
+    const box = document.getElementById('f-tp-list');
+    let tps = [];
+    if (s && s.chapters) for (const ch of s.chapters) {
+      if (!selCh.length || selCh.includes(ch.id)) for (const t of (ch.topics || [])) tps.push(t);
+    }
+    box.innerHTML = tps.length ? tps.map(x => `<label class="check"><input type="checkbox" value="${x.id}"> ${PK.esc(x.name_bn)}</label>`).join('') : `<span class="muted">${T('no_topics')}</span>`;
   }
   cs.onchange = () => {
     const c = CAT.find(x => x.id == cs.value);
-    if (c && c.slug === 'ssc') {
+    if (c && (c.slug === 'ssc' || c.slug === 'hsc')) {
       grpWrap.style.display = 'block';
       grpSelect.innerHTML = ALL();
       GRPS.forEach(g => grpSelect.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
@@ -103,28 +126,19 @@ const ALL = () => `<option value="">${T('opt_all')}</option>`;
     fillSubjects(c);
   };
   grpSelect.onchange = () => fillSubjects(CAT.find(x => x.id == cs.value));
-  document.getElementById('f-sub').onchange = (e) => {
-    const c = CAT.find(x => x.id == cs.value);
-    const s = c && c.subjects.find(x => x.id == (e.target ? e.target.value : document.getElementById('f-sub').value));
-    const ch = document.getElementById('f-ch'); ch.innerHTML = ALL();
-    (s ? s.chapters : []).forEach(x => ch.innerHTML += `<option value="${x.id}">${PK.esc(x.name_bn)}</option>`);
-    ch.onchange();
-  };
-  document.getElementById('f-ch').onchange = () => {
-    const c = CAT.find(x => x.id == cs.value);
-    const s = c && c.subjects.find(x => x.id == document.getElementById('f-sub').value);
-    const chh = s && s.chapters.find(x => x.id == document.getElementById('f-ch').value);
-    const tp = document.getElementById('f-tp'); tp.innerHTML = ALL();
-    (chh ? chh.topics : []).forEach(x => tp.innerHTML += `<option value="${x.id}">${PK.esc(x.name_bn)}</option>`);
-  };
+  document.getElementById('f-sub').onchange = fillChapters;
   loadHistory();
 })();
 
 const val = id => { const v = document.getElementById(id).value; return v ? (isNaN(v) || id === 'f-source' ? v : Number(v)) : undefined; };
 
 async function startPractice() {
+  const chIds = [...document.getElementById('f-ch-list').querySelectorAll('input[type=checkbox]:checked')].map(x => Number(x.value));
+  const tpIds = [...document.getElementById('f-tp-list').querySelectorAll('input[type=checkbox]:checked')].map(x => Number(x.value));
   const body = {
-    subject_id: val('f-sub'), chapter_id: val('f-ch'), topic_id: val('f-tp'),
+    subject_id: val('f-sub'),
+    chapter_ids: chIds.length ? chIds : undefined,
+    topic_ids: tpIds.length ? tpIds : undefined,
     difficulty: document.getElementById('f-diff').value || undefined,
     limit: Number(document.getElementById('f-limit').value),
     prev_year: document.getElementById('f-prevyear').checked || undefined,

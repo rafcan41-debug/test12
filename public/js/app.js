@@ -55,6 +55,7 @@ const PK = {
     const links = [
       ['/', T('nav_home', 'হোম'), 'home'],
       ['/exams.html', T('nav_exams', 'পরীক্ষা'), 'exams'],
+      ['/custom-exam.html', T('nav_custom', '🎯 কাস্টম'), 'custom-exam'],
       ['/practice.html', T('nav_practice', 'প্র্যাকটিস'), 'practice'],
       ['/leaderboard.html', T('nav_leaderboard', 'লিডারবোর্ড'), 'leaderboard'],
       ['/bookmarks.html', T('nav_bookmarks', 'বুকমার্ক'), 'bookmarks'],

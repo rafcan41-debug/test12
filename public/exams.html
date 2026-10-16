@@ -17,10 +17,15 @@
       <div><label data-i18n="label_class">ক্লাস</label><br><select id="q-cat" style="min-width:180px"><option value="" data-i18n="opt_all">— সব —</option></select></div>
       <div id="q-grp-wrap" style="display:none"><label data-i18n="label_grp_filter">গ্রুপ</label><br><select id="q-grp" style="min-width:180px"><option value="" data-i18n="opt_all">— সব —</option></select></div>
       <div><label data-i18n="label_subject">বিষয়</label><br><select id="q-sub" style="min-width:180px"><option value="" data-i18n="opt_select">— বাছাই করো —</option></select></div>
-      <div><label data-i18n="label_chapter">অধ্যায়</label><br><select id="q-chap" style="min-width:180px"><option value="" data-i18n="opt_all_chapters">— সব অধ্যায় —</option></select></div>
       <div><label data-i18n="label_qcount">প্রশ্ন সংখ্যা</label><br><select id="q-limit" style="min-width:100px">
         <option value="10">10</option><option value="20" selected>20</option><option value="30">30</option><option value="50">50</option>
       </select></div>
+    </div>
+    <div style="margin:12px 0">
+      <div><label data-i18n="label_chapter">অধ্যায়</label> <span class="muted" data-i18n="multi_hint">(একাধিক বাছাই করা যাবে)</span>
+        <div id="q-chapters" class="check-list"><span class="muted" data-i18n="pick_subject_first">আগে বিষয় বাছাই করো</span></div></div>
+      <div style="margin-top:8px"><label data-i18n="label_topic">টপিক</label> <span class="muted" data-i18n="multi_hint">(একাধিক বাছাই করা যাবে)</span>
+        <div id="q-topics" class="check-list"><span class="muted" data-i18n="pick_chapter_first">আগে অধ্যায় বাছাই করো</span></div></div>
     </div>
     <button class="btn" id="q-start" data-i18n="btn_start_quick">⚡ টেস্ট শুরু করো</button>
   </div>
@@ -45,7 +50,7 @@ const T = PK.lang.t;
   sel.onchange = () => {
     const c = cat.categories.find(x => x.id == sel.value);
     const fw = document.getElementById('f-grp-wrap'), fs = document.getElementById('f-grp');
-    if (c && c.slug === 'ssc') {
+    if (c && (c.slug === 'ssc' || c.slug === 'hsc')) {
       fw.style.display = 'inline';
       fs.innerHTML = `<option value="">${T('opt_all')}</option>`;
       ['common', 'science', 'business', 'humanities'].forEach(g => fs.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
@@ -58,41 +63,61 @@ const T = PK.lang.t;
 
   // --- quick chapter test ---
   const qCat = document.getElementById('q-cat'), qSub = document.getElementById('q-sub'),
-        qChap = document.getElementById('q-chap'), qLimit = document.getElementById('q-limit');
+        qChapters = document.getElementById('q-chapters'), qTopics = document.getElementById('q-topics'),
+        qLimit = document.getElementById('q-limit');
   let catalog = cat;
   cat.categories.forEach(c => qCat.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
   const QGRPS = ['common', 'science', 'business', 'humanities'];
+  const qCheckedIds = (el) => [...el.querySelectorAll('input[type=checkbox]:checked')].map(x => Number(x.value));
+  function qSubject() {
+    const c = catalog.categories.find(x => x.id == qCat.value);
+    return c ? c.subjects.find(x => x.id == qSub.value) : null;
+  }
+  function fillQChapters() {
+    const s = qSubject();
+    const chs = (s && s.chapters) || [];
+    qChapters.innerHTML = chs.length ? chs.map(x => `<label class="check"><input type="checkbox" value="${x.id}"> ${PK.esc(x.name_bn)}</label>`).join('') : `<span class="muted">${T('no_chapters')}</span>`;
+    qChapters.querySelectorAll('input').forEach(i => i.onchange = fillQTopics);
+    fillQTopics();
+  }
+  function fillQTopics() {
+    const s = qSubject();
+    const selCh = qCheckedIds(qChapters);
+    let tps = [];
+    if (s && s.chapters) for (const ch of s.chapters) {
+      if (!selCh.length || selCh.includes(ch.id)) for (const t of (ch.topics || [])) tps.push(t);
+    }
+    qTopics.innerHTML = tps.length ? tps.map(x => `<label class="check"><input type="checkbox" value="${x.id}"> ${PK.esc(x.name_bn)}</label>`).join('') : `<span class="muted">${T('no_topics')}</span>`;
+  }
   function fillQSubjects(c) {
     const g = document.getElementById('q-grp-wrap').style.display === 'block' ? document.getElementById('q-grp').value : '';
     qSub.innerHTML = `<option value="">${T('opt_select')}</option>`;
     (c ? c.subjects.filter(s => !g || s.grp === g) : []).forEach(s => qSub.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
   }
   qCat.onchange = () => {
-    qChap.innerHTML = `<option value="">${T('opt_all_chapters')}</option>`;
     const c = catalog.categories.find(x => x.id == qCat.value);
     const qw = document.getElementById('q-grp-wrap'), qgs = document.getElementById('q-grp');
-    if (c && c.slug === 'ssc') {
+    if (c && (c.slug === 'ssc' || c.slug === 'hsc')) {
       qw.style.display = 'block';
       qgs.innerHTML = `<option value="">${T('opt_all')}</option>`;
       QGRPS.forEach(g => qgs.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
     } else { qw.style.display = 'none'; qgs.value = ''; }
     fillQSubjects(c);
+    fillQChapters();
   };
   document.getElementById('q-grp').onchange = () => {
     fillQSubjects(catalog.categories.find(x => x.id == qCat.value));
-    qChap.innerHTML = `<option value="">${T('opt_all_chapters')}</option>`;
+    fillQChapters();
   };
-  qSub.onchange = () => {
-    qChap.innerHTML = `<option value="">${T('opt_all_chapters')}</option>`;
-    const c = catalog.categories.find(x => x.id == qCat.value);
-    const s = c ? c.subjects.find(x => x.id == qSub.value) : null;
-    ((s && s.chapters) ? s.chapters : []).forEach(ch => qChap.innerHTML += `<option value="${ch.id}">${PK.esc(ch.name_bn)}</option>`);
-  };
+  qSub.onchange = () => fillQChapters();
   document.getElementById('q-start').onclick = async () => {
     if (!qSub.value) { PK.toast(T('pick_subject_first')); return; }
+    const chIds = qCheckedIds(qChapters), tpIds = qCheckedIds(qTopics);
+    const body = { subject_id: qSub.value, limit: qLimit.value };
+    if (chIds.length) body.chapter_ids = chIds;
+    if (tpIds.length) body.topic_ids = tpIds;
     try {
-      const d = await PK.api('/api/exams/quick', { method: 'POST',
-        body: { subject_id: qSub.value, chapter_id: qChap.value || null, limit: qLimit.value } });
+      const d = await PK.api('/api/exams/quick', { method: 'POST', body });
       location.href = '/exam.html?id=' + d.exam_id;
     } catch (e) { PK.toast(e.message); }
   };

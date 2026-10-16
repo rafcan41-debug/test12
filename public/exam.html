@@ -147,19 +147,45 @@ async function submitExam(auto) {
   } catch (e) { PK.toast(e.message); }
 }
 
-async function showReview(id) {
-  const d = await PK.api(`/api/exams/attempts/${id}/review`);
-  const rv = document.getElementById('result');
-  rv.style.display = 'block';
-  document.getElementById('intro').style.display = 'none';
-  document.getElementById('runner').style.display = 'none';
-  rv.innerHTML = `<h2>${T('review_title')}</h2>` + d.review.map((q, i) => `
+let reviewData = [], reviewFilter = 'all';
+
+function reviewCard(q, i) {
+  return `
     <div class="card" style="margin-bottom:10px">
       <b>${i + 1}. ${PK.esc(q.question_text)}</b>
       ${['a','b','c','d'].map(o => `<div class="option ${o === q.correct_option ? 'correct' : ''} ${o === q.selected && o !== q.correct_option ? 'wrong' : ''}" style="cursor:default"><b>${o.toUpperCase()}.</b> ${PK.esc(q['option_'+o])}${o === q.selected ? T('your_answer') : ''}</div>`).join('')}
       ${q.explanation ? `<div class="explain"><b>${T('explanation_label')}</b> ${PK.esc(q.explanation)}</div>` : ''}
       ${q.year || q.source ? `<p class="muted" style="margin-top:6px">📜 ${PK.esc(q.source || '')}${q.year ? ' ' + q.year : ''}</p>` : ''}
-    </div>`).join('');
+    </div>`;
+}
+
+function renderReview() {
+  const rv = document.getElementById('result');
+  const list = reviewData.filter(q => {
+    if (reviewFilter === 'correct') return q.is_correct === true;
+    if (reviewFilter === 'wrong') return q.is_correct === false;
+    if (reviewFilter === 'skipped') return q.is_correct === null;
+    return true;
+  });
+  const btn = (f, label) => `<button class="btn small ${reviewFilter === f ? '' : 'secondary'}" onclick="setReviewFilter('${f}')">${label}</button>`;
+  rv.innerHTML = `<h2>${T('review_title')}</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
+      ${btn('all', T('filter_all'))}${btn('correct', '✅ ' + T('filter_correct'))}${btn('wrong', '❌ ' + T('filter_wrong'))}${btn('skipped', '⏭️ ' + T('filter_skipped'))}
+    </div>
+    <p class="muted">${list.length} / ${reviewData.length}</p>
+    ` + (list.length ? list.map((q, i) => reviewCard(q, reviewData.indexOf(q))).join('') : `<p class="muted">${T('filter_empty')}</p>`);
+}
+
+function setReviewFilter(f) { reviewFilter = f; renderReview(); }
+
+async function showReview(id) {
+  const d = await PK.api(`/api/exams/attempts/${id}/review`);
+  reviewData = d.review; reviewFilter = 'all';
+  const rv = document.getElementById('result');
+  rv.style.display = 'block';
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('runner').style.display = 'none';
+  renderReview();
 }
 </script>
 </body>
