@@ -52,10 +52,14 @@ const PK = {
   async nav(active = '') {
     const u = await this.me();
     const T = (k, fb) => (PK.lang ? PK.lang.t(k) : fb);
+    const _ic = (p) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+    const IC_BELL = _ic('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>');
+    const IC_TARGET = _ic('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>');
+    const IC_EDIT = _ic('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>');
     const links = [
       ['/', T('nav_home', 'হোম'), 'home'],
       ['/exams.html', T('nav_exams', 'পরীক্ষা'), 'exams'],
-      ['/custom-exam.html', T('nav_custom', '🎯 কাস্টম'), 'custom-exam'],
+      ['/custom-exam.html', T('nav_custom', IC_TARGET + ' কাস্টম'), 'custom-exam'],
       ['/practice.html', T('nav_practice', 'প্র্যাকটিস'), 'practice'],
       ['/leaderboard.html', T('nav_leaderboard', 'লিডারবোর্ড'), 'leaderboard'],
       ['/bookmarks.html', T('nav_bookmarks', 'বুকমার্ক'), 'bookmarks'],
@@ -74,11 +78,11 @@ const PK = {
     const langBtn = `<button id="lang-toggle" class="lang-toggle" onclick="PK.lang.set('${other}')" title="${other === 'en' ? 'Switch to English' : 'বাংলায় ফিরে যাও'}">${other === 'en' ? 'English' : 'বাংলা'}</button>`;
     const authHtml = u
       ? `<span class="badge ${u.plan === 'premium' ? 'premium' : ''}">${u.plan === 'premium' ? T('plan_premium', 'প্রিমিয়াম') : T('plan_free', 'ফ্রি')}</span>
-         <a href="/dashboard.html" class="bell">🔔${unread ? `<span class="count">${unread}</span>` : ''}</a>
+         <a href="/dashboard.html" class="bell">${IC_BELL}${unread ? `<span class="count">${unread}</span>` : ''}</a>
          <a href="#" id="logout-link">${T('nav_logout', 'লগআউট')}</a>`
       : `<a href="/auth.html">${T('nav_login', 'লগইন')}</a>`;
     document.querySelector('header .nav').innerHTML = `
-      <a class="logo" href="/">📝 পরীক্ষা <span class="en">Porikkha</span></a>
+      <a class="logo" href="/">${IC_EDIT} পরীক্ষা <span class="en">Porikkha</span></a>
       <div class="nav-links">${linkHtml}${authHtml}${langBtn}</div>`;
     const lo = document.getElementById('logout-link');
     if (lo) lo.onclick = (e) => { e.preventDefault(); this.logout(); };

@@ -50,7 +50,15 @@ header { background: var(--card); border-bottom: 1px solid var(--border); positi
 .section h2 { margin-bottom: 16px; }
 .cat-card { cursor: pointer; transition: transform .15s, box-shadow .15s; }
 .cat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.08); }
-.cat-icon { font-size: 2rem; margin-bottom: 8px; }
+.cat-icon { width: 48px; height: 48px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; background: #eef2ff; border-radius: 12px; color: #1d4ed8; }
+.cat-icon svg { width: 26px; height: 26px; }
+/* inline SVG icons (replaces emojis) */
+.ico { width: 1.15em; height: 1.15em; vertical-align: -0.2em; display: inline-block; flex: none; }
+.ico.dot { width: 0.7em; height: 0.7em; vertical-align: -0.05em; }
+.bell .ico { width: 20px; height: 20px; vertical-align: middle; }
+.logo .ico { width: 22px; height: 22px; vertical-align: -0.25em; }
+h1 .ico, h2 .ico, h3 .ico { margin-right: 2px; }
+.btn .ico { width: 1.1em; height: 1.1em; vertical-align: -0.18em; }
 
 /* buttons & forms */
 .btn { display: inline-block; background: var(--primary); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-family: inherit; }

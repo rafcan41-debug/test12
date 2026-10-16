@@ -11,7 +11,7 @@
 <header><div class="nav"></div></header>
 
 <div class="hero">
-  <h1 data-i18n="hero_h1">📝 চর্চা করো নিজের গতিতে</h1>
+  <h1 data-i18n="hero_h1">চর্চা করো নিজের গতিতে</h1>
   <p data-i18n="hero_p">যেকোনো বিষয়ের টপিক থেকে প্রশ্ন খুঁজে প্র্যাকটিস করো, ব্যাখ্যা বুঝে নাও, আর মক টেস্ট দিয়ে নিজের প্রস্তুতি মাপো।</p>
   <a class="btn" href="/auth.html" style="background:#fff;color:#0e7c4a" data-i18n="hero_cta1">ফ্রি শুরু করো</a>
   <a class="btn secondary" href="/exams.html" style="background:rgba(255,255,255,.2);color:#fff" data-i18n="hero_cta2">মডেল টেস্ট দেখো</a>
@@ -24,27 +24,39 @@
 
 <div class="container">
   <div class="section">
-    <h2 data-i18n="sec_choose">🎯 তোমার পরীক্ষা বেছে নাও</h2>
+    <h2 data-i18n="sec_choose">তোমার পরীক্ষা বেছে নাও</h2>
     <div class="grid" id="cats"></div>
   </div>
 
   <div class="section">
-    <h2 data-i18n="sec_why">✨ কেন পরীক্ষা?</h2>
+    <h2 data-i18n="sec_why">কেন পরীক্ষা?</h2>
     <div class="grid">
-      <div class="card"><h3 data-i18n="card_mocktest_t">⏱️ মডেল টেস্ট</h3><p class="muted" data-i18n="card_mocktest_d">আসল পরীক্ষার মতো টাইমার, নেগেটিভ মার্কিং ও স্বয়ংক্রিয় জমা।</p></div>
-      <div class="card"><h3 data-i18n="card_quick_t">⚡ কুইক প্র্যাকটিস</h3><p class="muted" data-i18n="card_quick_d">টপিক অনুযায়ী দ্রুত MCQ প্র্যাকটিস, সাথে সাথে ব্যাখ্যা।</p></div>
-      <div class="card"><h3 data-i18n="card_lb_t">🏆 লিডারবোর্ড</h3><p class="muted" data-i18n="card_lb_d">সারাদেশের শিক্ষার্থীদের সাথে নিজের অবস্থান দেখো।</p></div>
-      <div class="card"><h3 data-i18n="card_bm_t">🔖 বুকমার্ক</h3><p class="muted" data-i18n="card_bm_d">কঠিন প্রশ্ন সেভ করে পরে রিভিশন দাও।</p></div>
+      <div class="card"><h3 data-i18n="card_mocktest_t">মডেল টেস্ট</h3><p class="muted" data-i18n="card_mocktest_d">আসল পরীক্ষার মতো টাইমার, নেগেটিভ মার্কিং ও স্বয়ংক্রিয় জমা।</p></div>
+      <div class="card"><h3 data-i18n="card_quick_t">কুইক প্র্যাকটিস</h3><p class="muted" data-i18n="card_quick_d">টপিক অনুযায়ী দ্রুত MCQ প্র্যাকটিস, সাথে সাথে ব্যাখ্যা।</p></div>
+      <div class="card"><h3 data-i18n="card_lb_t">লিডারবোর্ড</h3><p class="muted" data-i18n="card_lb_d">সারাদেশের শিক্ষার্থীদের সাথে নিজের অবস্থান দেখো।</p></div>
+      <div class="card"><h3 data-i18n="card_bm_t">বুকমার্ক</h3><p class="muted" data-i18n="card_bm_d">কঠিন প্রশ্ন সেভ করে পরে রিভিশন দাও।</p></div>
     </div>
   </div>
 </div>
 
-<footer><span data-i18n="footer1">© 2026 পরীক্ষা (Porikkha) — নিজের গতিতে পড়াশোনা।</span><br><span data-i18n="footer2">একটি ওপেন, সেলফ-হোস্টেড পরীক্ষা প্ল্যাটফর্ম।</span></footer>
+<footer><span data-i18n="footer1">© 2026 পরীক্ষা (Porikkha) — নিজের গতিতে পড়াশোনা।<br><span data-i18n="footer2">একটি ওপেন, সেলফ-হোস্টেড পরীক্ষা প্ল্যাটফর্ম।</footer>
 
 <script src="/js/app.js"></script>
 <script src="/js/lang.js"></script>
 <script>
-const ICONS = {'primary-1-5':'🧒','junior-6-8':'🎒','ssc':'📘','hsc':'📗','medical':'🩺','engineering':'⚙️','varsity':'🎓','bcs':'🏛️','bank':'🏦','primary-teacher':'🍎'};
+const _svg = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICONS = {
+'primary-1-5': _svg('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>'),
+'junior-6-8': _svg('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'),
+'ssc': _svg('<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>'),
+'hsc': _svg('<path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/>'),
+'medical': _svg('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>'),
+'engineering': _svg('<circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>'),
+'varsity': _svg('<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 6 0 0 0 12 0v-3.5"/>'),
+'bcs': _svg('<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>'),
+'bank': _svg('<path d="M3 21h18"/><path d="M5 21V10m4 11V10m6 11V10m4 11V10"/><path d="m12 3 9 5H3z"/>'),
+'primary-teacher': _svg('<path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m9 21 3-3 3 3"/>')};
+const _dflt = _svg('<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>');
 const T = PK.lang.t;
 (async () => {
   await PK.nav('home');
@@ -52,7 +64,7 @@ const T = PK.lang.t;
     const d = await PK.api('/api/catalog');
     document.getElementById('cats').innerHTML = d.categories.map(c => `
       <div class="card cat-card" onclick="location.href='/exams.html?cat=${c.id}'">
-        <div class="cat-icon">${ICONS[c.slug] || '📚'}</div>
+        <div class="cat-icon">${ICONS[c.slug] || _dflt}</div>
         <h3>${PK.esc(c.name_bn)}</h3>
         <p class="muted">${c.subjects.length}${T('subjects_suffix')}</p>
       </div>`).join('');

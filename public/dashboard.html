@@ -17,34 +17,34 @@
 
     <div class="two-col">
       <div>
-        <h3 data-i18n="h3_notif">🔔 নোটিফিকেশন</h3>
+        <h3 data-i18n="h3_notif">নোটিফিকেশন</h3>
         <div id="notifs"></div>
         <button class="btn small secondary" onclick="readAll()" data-i18n="btn_read_all">সব পড়া হয়েছে</button>
       </div>
       <div>
-        <h3 data-i18n="h3_profile">👤 প্রোফাইল</h3>
+        <h3 data-i18n="h3_profile">প্রোফাইল</h3>
         <div class="card">
-          <label data-i18n="label_name">নাম</label><input id="p-name">
-          <label data-i18n="label_photo">ছবির URL</label><input id="p-photo" placeholder="https://…">
-          <label data-i18n="label_institution">শিক্ষাপ্রতিষ্ঠান</label><input id="p-inst">
+          <label data-i18n="label_name">নাম<input id="p-name">
+          <label data-i18n="label_photo">ছবির URL<input id="p-photo" placeholder="https://…">
+          <label data-i18n="label_institution">শিক্ষাপ্রতিষ্ঠান<input id="p-inst">
           <div class="two-col">
-            <div><label data-i18n="label_class">শ্রেণি</label><input id="p-class"></div>
-            <div><label data-i18n="label_group">বিভাগ</label><input id="p-group" data-i18n-ph="ph_group" placeholder="বিজ্ঞান/মানবিক/বাণিজ্য"></div>
+            <div><label data-i18n="label_class">শ্রেণি<input id="p-class"></div>
+            <div><label data-i18n="label_group">বিভাগ<input id="p-group" data-i18n-ph="ph_group" placeholder="বিজ্ঞান/মানবিক/বাণিজ্য"></div>
           </div>
           <button class="btn small" onclick="saveProfile()" data-i18n="btn_save_profile">সেভ করো</button>
         </div>
-        <h3 style="margin-top:12px" data-i18n="h3_change_pw">🔑 পাসওয়ার্ড বদলাও</h3>
+        <h3 style="margin-top:12px" data-i18n="h3_change_pw">পাসওয়ার্ড বদলাও</h3>
         <div class="card">
-          <label data-i18n="label_cur_pw">বর্তমান পাসওয়ার্ড</label><input id="pw-cur" type="password">
-          <label data-i18n="label_new_password">নতুন পাসওয়ার্ড</label><input id="pw-new" type="password">
+          <label data-i18n="label_cur_pw">বর্তমান পাসওয়ার্ড<input id="pw-cur" type="password">
+          <label data-i18n="label_new_password">নতুন পাসওয়ার্ড<input id="pw-new" type="password">
           <button class="btn small secondary" onclick="changePw()" data-i18n="btn_change">বদলাও</button>
         </div>
       </div>
     </div>
 
-    <h3 style="margin-top:16px" data-i18n="h3_recent">🕘 সাম্প্রতিক পরীক্ষা</h3>
+    <h3 style="margin-top:16px" data-i18n="h3_recent">সাম্প্রতিক পরীক্ষা</h3>
     <div id="recent"></div>
-    <p style="margin-top:12px"><a href="/support.html" data-i18n="link_support">💬 সাপোর্ট / টিকিট</a></p>
+    <p style="margin-top:12px"><a href="/support.html" data-i18n="link_support">সাপোর্ট / টিকিট</a></p>
   </div>
 </div>
 <script src="/js/app.js"></script>
@@ -54,9 +54,9 @@ const T = PK.lang.t;
 (async () => {
   const u = await PK.requireAuth(); if (!u) return;
   await PK.nav('dashboard');
-  document.getElementById('welcome').textContent = `${T('welcome')}, ${u.name}!`;
+  document.getElementById('welcome').innerHTML = `${T('welcome')}, ${PK.esc(u.name)}!`;
   document.getElementById('plan-banner').innerHTML = u.plan === 'premium'
-    ? `<div class="card" style="border-color:#f5a623">⭐ <b>${T('plan_premium')}</b> ${T('active_until')} ${PK.esc((u.premium_until || '').slice(0, 10))}</div>`
+    ? `<div class="card" style="border-color:#f5a623">${IC.star} <b>${T('plan_premium')}</b> ${T('active_until')} ${PK.esc((u.premium_until || '').slice(0, 10))}</div>`
     : `<div class="card">${T('you_are_on')} <b>${T('plan_free')}</b> ${T('plan_on_msg')} — <a href="/pricing.html">${T('btn_get_premium')}</a> (${T('unlimited_msg')})</div>`;
   ['p-name','p-photo','p-inst','p-class','p-group'].forEach((id, i) =>
     document.getElementById(id).value = [u.name, u.photo_url, u.institution, u.class, u.group_name][i] || '');

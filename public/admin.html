@@ -12,7 +12,7 @@
 <header><div class="nav"></div></header>
 <div class="container">
   <div class="section">
-    <h2 data-i18n="h2_admin">🛠️ অ্যাডমিন প্যানেল</h2>
+    <h2 data-i18n="h2_admin">️ অ্যাডমিন প্যানেল</h2>
     <div id="pw-warn"></div>
     <div class="tabs admin-tabs" id="tabs"></div>
     <div id="pane"></div>
@@ -58,7 +58,7 @@ async function pStats() {
     <div class="card"><h3>${s.questions}</h3><p class="muted">${T('stat_questions')} (${s.question_drafts}${T('drafts_suffix')})</p></div>
     <div class="card"><h3>${s.exams_taken}</h3><p class="muted">${T('stat_exams_taken')}</p></div>
     <div class="card"><h3>${s.pending_payments}</h3><p class="muted">${T('stat_pending_payments')}</p></div>
-    <div class="card"><h3>${s.open_tickets}</h3><p class="muted">${T('stat_open_tickets')}</p></div></div>
+    <div class="card"><h3>${s.open_tickets}</h3><p class="muted">${T('stat_open_tickets')}</p></div>
     <p style="margin-top:12px"><a class="btn small secondary" href="/api/admin/reports/results.csv">${T('btn_csv')}</a></p>`;
 }
 
@@ -176,7 +176,7 @@ function pImport() {
   document.getElementById('pane').innerHTML = `<div class="card" style="max-width:640px">
     <h3>${T('h3_import')}</h3>
     <ol>
-      <li><a href="/template-questions.json" download>📄 ${T('imp_step1')}</a></li>
+      <li><a href="/template-questions.json" download>${IC.fileText} ${T('imp_step1')}</a></li>
       <li>${T('imp_step2')}</li>
       <li>${T('imp_step3a')} <b>${T('imp_step3b')}</b> ${T('imp_step3c')}</li>
     </ol>
@@ -191,8 +191,8 @@ async function doImport() {
     const data = JSON.parse(document.getElementById('imp-json').value);
     const r = await PK.api('/api/questions/import', { method: 'POST', body: data });
     document.getElementById('imp-res').innerHTML =
-      `<p class="pass">✅ ${r.added}${T('imp_added')}</p>` +
-      (r.errors.length ? `<p class="fail">⚠️ ${r.errors.length}${T('imp_errors')}</p><pre>${PK.esc(JSON.stringify(r.errors.slice(0, 10), null, 1))}</pre>` : '');
+      `<p class="pass">${IC.checkCircle} ${r.added}${T('imp_added')}</p>` +
+      (r.errors.length ? `<p class="fail">${IC.alert} ${r.errors.length}${T('imp_errors')}</p><pre>${PK.esc(JSON.stringify(r.errors.slice(0, 10), null, 1))}</pre>` : '');
   } catch (e) { PK.toast(e.message); }
 }
 
@@ -281,7 +281,7 @@ async function pTickets() {
     <p class="muted">${PK.esc(t.message.slice(0, 120))}</p>
     <div style="display:flex;gap:6px"><input id="tr-${t.id}" placeholder="${T('ph_reply')}" style="margin:0">
     <button class="btn small" onclick="tReply(${t.id})">${T('btn_reply')}</button>
-    <button class="btn small secondary" onclick="tClose(${t.id})">${T('btn_close')}</button></div></div>`).join('')
+    <button class="btn small secondary" onclick="tClose(${t.id})">${T('btn_close')}</button></div>`).join('')
     : `<p class="muted">${T('no_tickets')}</p>`;
 }
 async function tReply(id) {

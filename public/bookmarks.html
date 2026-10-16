@@ -11,7 +11,7 @@
 <header><div class="nav"></div></header>
 <div class="container">
   <div class="section">
-    <h2 data-i18n="h2_bookmarks">🔖 সেভ করা প্রশ্ন</h2>
+    <h2 data-i18n="h2_bookmarks">সেভ করা প্রশ্ন</h2>
     <p class="muted" data-i18n="p_bookmarks_sub">কঠিন বা গুরুত্বপূর্ণ প্রশ্ন বুকমার্ক করে পরে রিভিশন দাও।</p>
     <div id="list"></div>
   </div>
@@ -32,7 +32,7 @@ async function load() {
     <div class="card" style="margin-bottom:10px">
       <b>${i + 1}. ${PK.esc(q.question_text)}</b>
       ${['a','b','c','d'].map(o => `<div class="muted">(${o.toUpperCase()}) ${PK.esc(q['option_'+o])}</div>`).join('')}
-      ${q.year || q.source ? `<p class="muted">📜 ${PK.esc(q.source || '')}${q.year ? ' ' + q.year : ''}</p>` : ''}
+      ${q.year || q.source ? `<p class="muted">${IC.fileText} ${PK.esc(q.source || '')}${q.year ? ' ' + q.year : ''}</p>` : ''}
       <div style="margin-top:8px;display:flex;gap:8px">
         <button class="btn small secondary" onclick="reattempt(${q.id})">${T('btn_retry')}</button>
         <button class="btn small danger" onclick="removeBm(${q.id})">${T('btn_delete')}</button>

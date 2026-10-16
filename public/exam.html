@@ -56,7 +56,7 @@ let attemptId = null, qs = [], answers = {}, idx = 0, endsAt = 0, timerH = null,
   exam = d.exam;
   document.getElementById('intro').style.display = 'block';
   document.getElementById('e-title').textContent = exam.title;
-  document.getElementById('e-meta').textContent = `⏱️ ${exam.duration_min} ${T('min_unit')} • ${exam.question_limit}${T('q_count_suffix')} • ${T('negative')} ${exam.negative_mark} • ${T('pass_mark')} ${exam.pass_marks}`;
+  document.getElementById('e-meta').innerHTML = `${IC.clock} ${exam.duration_min} ${T('min_unit')} • ${exam.question_limit}${T('q_count_suffix')} • ${T('negative')} ${exam.negative_mark} • ${T('pass_mark')} ${exam.pass_marks}`;
   const mine = await PK.api(`/api/exams/${examId}/my-attempts`);
   const done = mine.attempts.filter(a => a.status === 'submitted');
   if (done.length) {
@@ -138,7 +138,7 @@ async function submitExam(auto) {
     document.getElementById('runner').style.display = 'none';
     const rv = document.getElementById('result');
     rv.style.display = 'block';
-    rv.innerHTML = `<h2>${auto ? T('time_up') : '✅'} ${T('result_title')}</h2>
+    rv.innerHTML = `<h2>${auto ? T('time_up') : IC.checkCircle} ${T('result_title')}</h2>
       <div class="result-big">${r.score} / ${r.total_marks}</div>
       <p>${r.percentage}% — ${r.passed ? `<span class="pass">${T('pass_label')}</span>` : `<span class="fail">${T('fail_label')}</span>`}</p>
       <p class="muted">${T('correct_c')} ${r.correct_count} • ${T('wrong_c')} ${r.wrong_count} • ${T('unanswered_c')} ${r.unanswered_count} • ${T('time_c')} ${r.time_taken_sec}s</p>
@@ -155,7 +155,7 @@ function reviewCard(q, i) {
       <b>${i + 1}. ${PK.esc(q.question_text)}</b>
       ${['a','b','c','d'].map(o => `<div class="option ${o === q.correct_option ? 'correct' : ''} ${o === q.selected && o !== q.correct_option ? 'wrong' : ''}" style="cursor:default"><b>${o.toUpperCase()}.</b> ${PK.esc(q['option_'+o])}${o === q.selected ? T('your_answer') : ''}</div>`).join('')}
       ${q.explanation ? `<div class="explain"><b>${T('explanation_label')}</b> ${PK.esc(q.explanation)}</div>` : ''}
-      ${q.year || q.source ? `<p class="muted" style="margin-top:6px">📜 ${PK.esc(q.source || '')}${q.year ? ' ' + q.year : ''}</p>` : ''}
+      ${q.year || q.source ? `<p class="muted" style="margin-top:6px">${IC.fileText} ${PK.esc(q.source || '')}${q.year ? ' ' + q.year : ''}</p>` : ''}
     </div>`;
 }
 
@@ -170,7 +170,7 @@ function renderReview() {
   const btn = (f, label) => `<button class="btn small ${reviewFilter === f ? '' : 'secondary'}" onclick="setReviewFilter('${f}')">${label}</button>`;
   rv.innerHTML = `<h2>${T('review_title')}</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
-      ${btn('all', T('filter_all'))}${btn('correct', '✅ ' + T('filter_correct'))}${btn('wrong', '❌ ' + T('filter_wrong'))}${btn('skipped', '⏭️ ' + T('filter_skipped'))}
+      ${btn('all', T('filter_all'))}${btn('correct', IC.checkCircle + ' ' + T('filter_correct'))}${btn('wrong', IC.xCircle + ' ' + T('filter_wrong'))}${btn('skipped', IC.skip + ' ' + T('filter_skipped'))}
     </div>
     <p class="muted">${list.length} / ${reviewData.length}</p>
     ` + (list.length ? list.map((q, i) => reviewCard(q, reviewData.indexOf(q))).join('') : `<p class="muted">${T('filter_empty')}</p>`);

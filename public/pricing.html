@@ -11,23 +11,23 @@
 <header><div class="nav"></div></header>
 <div class="container">
   <div class="section">
-    <h2 data-i18n="h2_pricing">💎 প্ল্যান বেছে নাও</h2>
+    <h2 data-i18n="h2_pricing">প্ল্যান বেছে নাও</h2>
     <div class="grid" id="plans"></div>
 
     <div id="pay-box" class="card" style="display:none;margin-top:20px;max-width:520px">
-      <h3 data-i18n="h3_pay">📱 bKash-এ পেমেন্ট করো</h3>
+      <h3 data-i18n="h3_pay">bKash-এ পেমেন্ট করো</h3>
       <ol>
-        <li><span data-i18n="pay_step1a">bKash অ্যাপ থেকে</span> <b>Send Money</b> <span data-i18n="pay_step1b">করো:</span> <b id="merchant">01XXXXXXXXX</b> <span data-i18n="merchant_label">(মার্চেন্ট নম্বর)</span></li>
-        <li><span data-i18n="pay_step2">টাকার পরিমাণ:</span> <b>৳<span id="pay-amount"></span></b></li>
+        <li><span data-i18n="pay_step1a">bKash অ্যাপ থেকে <b>Send Money</b> <span data-i18n="pay_step1b">করো: <b id="merchant">01XXXXXXXXX</b> <span data-i18n="merchant_label">(মার্চেন্ট নম্বর)</li>
+        <li><span data-i18n="pay_step2">টাকার পরিমাণ: <b>৳<span id="pay-amount"></span></b></li>
         <li data-i18n="pay_step3">ট্রানজেকশন আইডি (TrxID) নিচে দাও</li>
       </ol>
-      <label data-i18n="label_txn">bKash ট্রানজেকশন আইডি (TrxID)</label><input id="txn" data-i18n-ph="ph_txn" placeholder="যেমন: 9HXK2LMN4P">
-      <label data-i18n="label_sender">তোমার bKash নম্বর</label><input id="sender" placeholder="01XXXXXXXXX">
+      <label data-i18n="label_txn">bKash ট্রানজেকশন আইডি (TrxID)<input id="txn" data-i18n-ph="ph_txn" placeholder="যেমন: 9HXK2LMN4P">
+      <label data-i18n="label_sender">তোমার bKash নম্বর<input id="sender" placeholder="01XXXXXXXXX">
       <button class="btn" onclick="submitPayment()" data-i18n="btn_submit_pay">জমা দাও</button>
       <p class="muted" style="margin-top:8px" data-i18n="pay_note">অ্যাডমিন যাচাই করে ২৪ ঘণ্টার মধ্যে প্রিমিয়াম চালু করে দেবেন।</p>
     </div>
 
-    <h3 style="margin-top:20px" data-i18n="h3_my_payments">🧾 আমার পেমেন্ট</h3>
+    <h3 style="margin-top:20px" data-i18n="h3_my_payments">আমার পেমেন্ট</h3>
     <div id="my-payments"></div>
   </div>
 </div>
@@ -41,7 +41,7 @@ const T = PK.lang.t;
   const d = await PK.api('/api/payments/plans');
   document.getElementById('plans').innerHTML = d.plans.map(p => `
     <div class="card" ${p.id === 'premium' ? 'style="border:2px solid #f5a623"' : ''}>
-      <h3>${p.id === 'premium' ? '⭐' : '🆓'} ${PK.esc(p.name_bn)}</h3>
+      <h3>${p.id === 'premium' ? IC.star : IC.tag} ${PK.esc(p.name_bn)}</h3>
       <div class="result-big" style="font-size:2rem">${p.price === 0 ? T('price_free') : '৳' + p.price}</div>
       <p class="muted">${p.id === 'premium' ? p.days + T('days_suffix') : T('always')}</p>
       <ul>${p.features.map(f => `<li>${PK.esc(f)}</li>`).join('')}</ul>
