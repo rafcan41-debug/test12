@@ -57,6 +57,7 @@ function initSchema() {
   ensurePrimaryExtraSubjects(); // fixed ids 40/41 for import files (no-op when categories not seeded yet)
   ensureClass610Subjects(); // fixed ids 100-148 for class 6-10 question packs
   ensureSubjectGroups(); // tag class 9-10 subjects with group (common/science/business/humanities)
+  ensureClass1112Subjects(); // fixed ids 200+ for class 11-12 (HSC) question bank
   backfillChapters(); // build chapters from question tags (idempotent)
 }
 
@@ -191,6 +192,55 @@ function ensureSubjectGroups() {
   if (n) console.log(`[migrate] tagged ${n} class 9-10 subjects with groups`);
 }
 
+// Ensure class 11-12 (HSC) subjects exist with FIXED ids (200+)
+// so question pack files can reference them on fresh AND already-seeded DBs.
+// grp: business / science / humanities / common (for group filtering in UI).
+function ensureClass1112Subjects() {
+  const cat = db.prepare("SELECT id FROM categories WHERE slug = 'hsc'").get();
+  if (!cat) return;
+  const defs = [
+    // [id, grp, name_bn, name_en] — ids MUST match seed_data/hsc-*-3000.json subject_ids
+    // Business Studies
+    [200, 'business', 'হিসাববিজ্ঞান ১ম পত্র', 'HSC Accounting 1st Paper'],
+    [201, 'business', 'হিসাববিজ্ঞান ২য় পত্র', 'HSC Accounting 2nd Paper'],
+    [202, 'business', 'ব্যবসায় সংগঠন ও ব্যবস্থাপনা ১ম পত্র', 'HSC Business Organization and Management 1st Paper'],
+    [203, 'business', 'ব্যবসায় সংগঠন ও ব্যবস্থাপনা ২য় পত্র', 'HSC Business Organization and Management 2nd Paper'],
+    [204, 'business', 'ফিন্যান্স, ব্যাংকিং ও বিমা ১ম পত্র', 'HSC Finance, Banking and Insurance 1st Paper'],
+    [205, 'business', 'ফিন্যান্স, ব্যাংকিং ও বিমা ২য় পত্র', 'HSC Finance, Banking and Insurance 2nd Paper'],
+    // Science
+    [210, 'science', 'পদার্থবিজ্ঞান ১ম পত্র', 'HSC Physics 1st Paper'],
+    [211, 'science', 'পদার্থবিজ্ঞান ২য় পত্র', 'HSC Physics 2nd Paper'],
+    [212, 'science', 'রসায়ন ১ম পত্র', 'HSC Chemistry 1st Paper'],
+    [213, 'science', 'রসায়ন ২য় পত্র', 'HSC Chemistry 2nd Paper'],
+    [214, 'science', 'জীববিজ্ঞান ১ম পত্র', 'HSC Biology 1st Paper'],
+    [215, 'science', 'জীববিজ্ঞান ২য় পত্র', 'HSC Biology 2nd Paper'],
+    [216, 'science', 'উচ্চতর গণিত ১ম পত্র', 'HSC Higher Mathematics 1st Paper'],
+    [217, 'science', 'উচ্চতর গণিত ২য় পত্র', 'HSC Higher Mathematics 2nd Paper'],
+    // Humanities
+    [230, 'humanities', 'অর্থনীতি ১ম পত্র', 'HSC Economics 1st Paper'],
+    [231, 'humanities', 'অর্থনীতি ২য় পত্র', 'HSC Economics 2nd Paper'],
+    [232, 'humanities', 'পৌরনীতি ও সুশাসন ১ম পত্র', 'HSC Civics and Good Governance 1st Paper'],
+    [233, 'humanities', 'পৌরনীতি ও সুশাসন ২য় পত্র', 'HSC Civics and Good Governance 2nd Paper'],
+    [234, 'humanities', 'ইতিহাস ১ম পত্র', 'HSC History 1st Paper'],
+    [235, 'humanities', 'ইতিহাস ২য় পত্র', 'HSC History 2nd Paper'],
+    [236, 'humanities', 'ভূগোল ১ম পত্র', 'HSC Geography 1st Paper'],
+    [237, 'humanities', 'ভূগোল ২য় পত্র', 'HSC Geography 2nd Paper'],
+    // Compulsory (all groups)
+    [220, 'common', 'বাংলা ১ম পত্র', 'HSC Bangla 1st Paper'],
+    [221, 'common', 'বাংলা ২য় পত্র', 'HSC Bangla 2nd Paper'],
+    [222, 'common', 'English 1st Paper', 'HSC English 1st Paper'],
+    [223, 'common', 'English 2nd Paper', 'HSC English 2nd Paper'],
+    [224, 'common', 'তথ্য ও যোগাযোগ প্রযুক্তি', 'HSC Information and Communication Technology'],
+  ];
+  const ins = db.prepare(`INSERT INTO subjects (id, category_id, name_bn, name_en, grp)
+    SELECT ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE id = ?)`);
+  let added = 0;
+  for (const [id, grp, bn, en] of defs) {
+    added += ins.run(id, cat.id, bn, en, grp, id).changes;
+  }
+  if (added) console.log(`[migrate] added ${added} class 11-12 subjects (ids 200+)`);
+}
+
 // Ensure the two extra primary subjects exist with FIXED ids (40, 41)
 // so question import files can reference them on fresh AND already-seeded DBs.
 function ensurePrimaryExtraSubjects() {
@@ -204,4 +254,4 @@ function ensurePrimaryExtraSubjects() {
   if (added) console.log('[migrate] added primary subjects 40=প্রাথমিক বিজ্ঞান, 41=বাংলাদেশ ও বিশ্বপরিচয়');
 }
 
-module.exports = { db, initSchema, ensurePrimaryExtraSubjects, ensureClass610Subjects, ensureSubjectGroups, backfillChapters };
+module.exports = { db, initSchema, ensurePrimaryExtraSubjects, ensureClass610Subjects, ensureSubjectGroups, ensureClass1112Subjects, backfillChapters };

@@ -1,6 +1,6 @@
 // Question bank: filtered fetch (answers stripped for students), teacher/admin CRUD + import
 const express = require('express');
-const { db } = require('../db');
+const { db, backfillChapters } = require('../db');
 const { requireAuth, requireRole } = require('../auth');
 const { apiLimiter } = require('../ratelimit');
 const { isNonEmpty, isOption, isDifficulty, isInt } = require('../validate');
@@ -137,6 +137,7 @@ router.post('/import', requireAuth, requireRole('teacher', 'admin'), (req, res) 
     });
   });
   tx(list);
+  backfillChapters(); // link freshly imported questions to chapters from "অধ্যায়:" tags
   db.prepare(`INSERT INTO audit_log (actor_id, action, target_type, details) VALUES (?,?,?,?)`)
     .run(req.user.id, 'question.import', 'question', `added=${added} errors=${errors.length}`);
   res.json({ added, errors });

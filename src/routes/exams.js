@@ -32,9 +32,14 @@ function resolveQuestions(exam) {
   const f = JSON.parse(exam.filter_json || '{}');
   const where = ["q.status = 'published'"];
   const params = [];
-  if (f.subject_id) { where.push('q.subject_id = ?'); params.push(f.subject_id); }
-  if (f.chapter_id) { where.push('q.chapter_id = ?'); params.push(f.chapter_id); }
-  if (f.topic_id) { where.push('q.topic_id = ?'); params.push(f.topic_id); }
+  const inList = (ids) => ids.map(() => '?').join(',');
+  const arrOf = (v) => (Array.isArray(v) ? v : (v ? [v] : [])).map(Number).filter((n) => n > 0);
+  const sIds = arrOf(f.subject_ids && f.subject_ids.length ? f.subject_ids : f.subject_id);
+  const cIds = arrOf(f.chapter_ids && f.chapter_ids.length ? f.chapter_ids : f.chapter_id);
+  const tIds = arrOf(f.topic_ids && f.topic_ids.length ? f.topic_ids : f.topic_id);
+  if (sIds.length) { where.push(`q.subject_id IN (${inList(sIds)})`); params.push(...sIds); }
+  if (cIds.length) { where.push(`q.chapter_id IN (${inList(cIds)})`); params.push(...cIds); }
+  if (tIds.length) { where.push(`q.topic_id IN (${inList(tIds)})`); params.push(...tIds); }
   if (f.difficulty) { where.push('q.difficulty = ?'); params.push(f.difficulty); }
   if (f.prev_year) { where.push('q.prev_year = 1'); }
   if (f.year && Number.isInteger(Number(f.year))) { where.push('q.year = ?'); params.push(Number(f.year)); }
@@ -61,6 +66,55 @@ function getAttemptOwned(attemptId, userId, role) {
   if (a.user_id !== userId && role !== 'admin') return { error: 403 };
   return { attempt: a };
 }
+
+// --- custom exam -------------------------------------------------------------
+// Student builds their own test: multi-select subjects/chapters/topics + question count.
+// Finds or creates a hidden auto exam, returns its id. exam.html?id= works as-is.
+router.post('/custom', requireAuth, (req, res) => {
+  const b = req.body || {};
+  const subjectIds = (Array.isArray(b.subject_ids) ? b.subject_ids : []).map(Number).filter((n) => n > 0);
+  const chapterIds = (Array.isArray(b.chapter_ids) ? b.chapter_ids : []).map(Number).filter((n) => n > 0);
+  const topicIds = (Array.isArray(b.topic_ids) ? b.topic_ids : []).map(Number).filter((n) => n > 0);
+  if (!subjectIds.length) return res.status(400).json({ error: 'কমপক্ষে একটি বিষয় বাছাই করো' });
+
+  const where = ["q.status = 'published'"];
+  const params = [];
+  const inList = (ids) => ids.map(() => '?').join(',');
+  where.push(`q.subject_id IN (${inList(subjectIds)})`);
+  params.push(...subjectIds);
+  if (chapterIds.length) { where.push(`q.chapter_id IN (${inList(chapterIds)})`); params.push(...chapterIds); }
+  if (topicIds.length) { where.push(`q.topic_id IN (${inList(topicIds)})`); params.push(...topicIds); }
+
+  const avail = db.prepare(`SELECT COUNT(*) c FROM questions q WHERE ${where.join(' AND ')}`).get(...params).c;
+  if (!avail) {
+    if (subjectIds.some((id) => id >= 200)) return res.status(400).json({ error: 'এই বিষয়ের প্রশ্ন শীঘ্রই আসছে 📚' });
+    return res.status(400).json({ error: 'এই নির্বাচনে কোনো প্রশ্ন নেই' });
+  }
+  const limit = Math.min(200, Math.max(5, parseInt(b.limit, 10) || 20), avail);
+
+  const filter = { subject_ids: subjectIds, limit };
+  if (chapterIds.length) filter.chapter_ids = chapterIds;
+  if (topicIds.length) filter.topic_ids = topicIds;
+  const key = JSON.stringify(filter);
+
+  let exam = db.prepare('SELECT * FROM exams WHERE is_auto = 1 AND filter_json = ?').get(key);
+  if (!exam) {
+    const subNames = db.prepare(
+      `SELECT name_bn FROM subjects WHERE id IN (${inList(subjectIds)})`
+    ).all(...subjectIds).map((s) => s.name_bn).slice(0, 3).join(', ');
+    const title = `🎯 কাস্টম টেস্ট — ${subNames}${subjectIds.length > 3 ? '…' : ''} (${limit}টি)`;
+    const firstSub = db.prepare('SELECT category_id FROM subjects WHERE id = ?').get(subjectIds[0]);
+    const info = db.prepare(`INSERT INTO exams
+      (title, title_en, category_id, duration_min, negative_mark, pass_marks,
+       selection_mode, filter_json, question_limit, status, is_auto, created_by)
+      VALUES (?,?,?,?,?,?,?,?,?, 'published', 1, ?)`)
+      .run(title, 'Custom Test', firstSub ? firstSub.category_id : null,
+        Math.max(10, limit), 0.25, Math.ceil(limit * 0.4),
+        'filter', key, limit, req.user.id);
+    exam = db.prepare('SELECT * FROM exams WHERE id = ?').get(info.lastInsertRowid);
+  }
+  res.json({ exam_id: exam.id, available: avail, limit });
+});
 
 // --- exam catalog ----------------------------------------------------------
 
@@ -170,31 +224,46 @@ router.post('/:id/archive', requireAuth, requireRole('teacher', 'admin'), (req, 
 // Finds or creates a hidden auto exam, returns its id. exam.html?id= works as-is.
 router.post('/quick', requireAuth, (req, res) => {
   const subjectId = parseInt(req.body.subject_id, 10);
-  const chapterId = req.body.chapter_id ? parseInt(req.body.chapter_id, 10) : null;
+  const arrOf = (v) => (Array.isArray(v) ? v : (v ? [v] : [])).map(Number).filter((n) => n > 0);
+  let chapterIds = arrOf(req.body.chapter_ids);
+  if (!chapterIds.length && req.body.chapter_id) chapterIds = arrOf(req.body.chapter_id);
+  const topicIds = arrOf(req.body.topic_ids);
   if (!subjectId) return res.status(400).json({ error: 'বিষয় বাছাই করো' });
   const sub = db.prepare(
     `SELECT s.*, c.name_bn AS cat_name FROM subjects s
      JOIN categories c ON c.id = s.category_id WHERE s.id = ?`).get(subjectId);
   if (!sub) return res.status(400).json({ error: 'বিষয় পাওয়া যায়নি' });
+  const inList = (ids) => ids.map(() => '?').join(',');
   const filter = { subject_id: subjectId };
-  let chapName = '';
-  if (chapterId) {
-    const ch = db.prepare('SELECT * FROM chapters WHERE id = ? AND subject_id = ?').get(chapterId, subjectId);
-    if (!ch) return res.status(400).json({ error: 'অধ্যায় পাওয়া যায়নি' });
-    filter.chapter_id = chapterId;
-    chapName = ch.name_bn;
+  let chapLabel = '';
+  if (chapterIds.length) {
+    const chs = db.prepare(`SELECT * FROM chapters WHERE subject_id = ? AND id IN (${inList(chapterIds)})`).all(subjectId, ...chapterIds);
+    if (!chs.length) return res.status(400).json({ error: 'অধ্যায় পাওয়া যায়নি' });
+    chapterIds = chs.map((c) => c.id);
+    filter.chapter_ids = chapterIds;
+    chapLabel = chs.length === 1 ? ' — ' + chs[0].name_bn : ` — ${chs.length}টি অধ্যায়`;
+  }
+  if (topicIds.length) {
+    const tps = db.prepare(`SELECT t.* FROM topics t JOIN chapters c ON c.id = t.chapter_id WHERE c.subject_id = ? AND t.id IN (${inList(topicIds)})`).all(subjectId, ...topicIds);
+    if (!tps.length) return res.status(400).json({ error: 'টপিক পাওয়া যায়নি' });
+    filter.topic_ids = tps.map((t) => t.id);
+    chapLabel += ` + ${tps.length}টি টপিক`;
   }
   const where = ["q.status = 'published'", 'q.subject_id = ?'];
   const params = [subjectId];
-  if (chapterId) { where.push('q.chapter_id = ?'); params.push(chapterId); }
+  if (chapterIds.length) { where.push(`q.chapter_id IN (${inList(chapterIds)})`); params.push(...chapterIds); }
+  if (filter.topic_ids) { where.push(`q.topic_id IN (${inList(filter.topic_ids)})`); params.push(...filter.topic_ids); }
   const avail = db.prepare(`SELECT COUNT(*) c FROM questions q WHERE ${where.join(' AND ')}`).get(...params).c;
-  if (!avail) return res.status(400).json({ error: 'এই নির্বাচনে কোনো প্রশ্ন নেই' });
-  const limit = Math.min(50, Math.max(5, parseInt(req.body.limit, 10) || 20), avail);
+  if (!avail) {
+    if (subjectId >= 200) return res.status(400).json({ error: 'এই বিষয়ের প্রশ্ন শীঘ্রই আসছে 📚' });
+    return res.status(400).json({ error: 'এই নির্বাচনে কোনো প্রশ্ন নেই' });
+  }
+  const limit = Math.min(100, Math.max(5, parseInt(req.body.limit, 10) || 20), avail);
   filter.limit = limit;
   const key = JSON.stringify(filter);
   let exam = db.prepare('SELECT * FROM exams WHERE is_auto = 1 AND filter_json = ?').get(key);
   if (!exam) {
-    const title = `⚡ ${sub.name_bn}${chapName ? ' — ' + chapName : ''} কুইক টেস্ট`;
+    const title = `⚡ ${sub.name_bn}${chapLabel} কুইক টেস্ট`;
     const info = db.prepare(`INSERT INTO exams
       (title, title_en, category_id, duration_min, negative_mark, pass_marks,
        selection_mode, filter_json, question_limit, status, is_auto, created_by)

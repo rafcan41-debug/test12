@@ -19,9 +19,14 @@ router.post('/start', requireAuth, (req, res) => {
   const limit = Math.min(50, Math.max(1, parseInt(f.limit || 10, 10)));
   const where = ["q.status = 'published'"];
   const params = [];
-  if (f.subject_id) { where.push('q.subject_id = ?'); params.push(f.subject_id); }
-  if (f.chapter_id) { where.push('q.chapter_id = ?'); params.push(f.chapter_id); }
-  if (f.topic_id) { where.push('q.topic_id = ?'); params.push(f.topic_id); }
+  const inList = (ids) => ids.map(() => '?').join(',');
+  const arrOf = (v) => (Array.isArray(v) ? v : (v ? [v] : [])).map(Number).filter((n) => n > 0);
+  const sIds = arrOf(f.subject_ids && f.subject_ids.length ? f.subject_ids : f.subject_id);
+  const cIds = arrOf(f.chapter_ids && f.chapter_ids.length ? f.chapter_ids : f.chapter_id);
+  const tIds = arrOf(f.topic_ids && f.topic_ids.length ? f.topic_ids : f.topic_id);
+  if (sIds.length) { where.push(`q.subject_id IN (${inList(sIds)})`); params.push(...sIds); }
+  if (cIds.length) { where.push(`q.chapter_id IN (${inList(cIds)})`); params.push(...cIds); }
+  if (tIds.length) { where.push(`q.topic_id IN (${inList(tIds)})`); params.push(...tIds); }
   if (f.difficulty && isDifficulty(f.difficulty)) { where.push('q.difficulty = ?'); params.push(f.difficulty); }
   if (f.year && Number.isInteger(Number(f.year))) { where.push('q.year = ?'); params.push(Number(f.year)); }
   if (f.source && String(f.source).trim()) { where.push('q.source LIKE ?'); params.push(`%${String(f.source).trim()}%`); }
@@ -30,7 +35,11 @@ router.post('/start', requireAuth, (req, res) => {
     `SELECT id, subject_id, chapter_id, topic_id, question_text, option_a, option_b, option_c, option_d, marks, difficulty
      FROM questions q WHERE ${where.join(' AND ')} ORDER BY RANDOM() LIMIT ${limit}`
   ).all(...params);
-  if (!rows.length) return res.status(400).json({ error: 'এই ফিল্টারে কোনো প্রশ্ন নেই' });
+  if (!rows.length) {
+    const sid = parseInt(f.subject_id, 10) || 0;
+    if (sid >= 200) return res.status(400).json({ error: 'এই বিষয়ের প্রশ্ন শীঘ্রই আসছে 📚' });
+    return res.status(400).json({ error: 'এই ফিল্টারে কোনো প্রশ্ন নেই' });
+  }
 
   // Cap is on answers, not session start — checked per answer. But reserve loosely:
   const cap = checkAndUse(req.user.id, req.user.plan, 'practice_answers', FREE_PRACTICE_PER_DAY);
