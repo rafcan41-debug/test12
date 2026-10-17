@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>প্রশ্নব্যাংক — পরীক্ষা</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #f4f6f8; --card: #fff; --text: #1a1a2e; --muted: #6b7280; --green: #0d6e4f; --border: #e5e7eb; }
+[data-theme="dark"] { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --muted: #94a3b8; --green: #34d399; --border: #334155; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Hind Siliguri', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+.sidebar { width: 230px; background: var(--card); border-right: 1px solid var(--border); padding: 18px 10px; position: fixed; height: 100vh; overflow-y: auto; z-index: 20; }
+.logo { font-size: 1.4rem; font-weight: 700; color: var(--green); padding: 0 12px 18px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; cursor: pointer; font-size: .92rem; color: var(--text); text-decoration: none; margin-bottom: 2px; }
+.nav-item:hover { background: #e8f5e9; }
+.nav-item.active { background: #e8f5e9; color: var(--green); font-weight: 600; }
+.main { margin-left: 230px; flex: 1; }
+.topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+.topbar h1 { font-size: 1.2rem; }
+.theme-btn { background: #e8f5e9; border: none; border-radius: 20px; padding: 7px 14px; cursor: pointer; font-size: .85rem; color: var(--green); }
+.content { padding: 20px 24px; max-width: 1100px; margin: 0 auto; }
+/* Tabs + search */
+.tabrow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.tabs { display: flex; gap: 8px; }
+.tab { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; padding: 7px 20px; cursor: pointer; font-size: .88rem; font-family: inherit; }
+.tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.search { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; padding: 8px 18px; width: 260px; font-size: .88rem; font-family: inherit; }
+/* Section */
+.sec { background: var(--card); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+.sec.green-bg { background: #eef7ee; } [data-theme="dark"] .sec.green-bg { background: #1a2e22; }
+.sec.mint-bg { background: #e8f8f3; } [data-theme="dark"] .sec.mint-bg { background: #1a2e28; }
+.sec.olive-bg { background: #f0f0e4; } [data-theme="dark"] .sec.olive-bg { background: #2a2a1e; }
+.sec h2 { font-size: 1.05rem; margin-bottom: 2px; }
+.sec .sub { font-size: .82rem; color: var(--muted); margin-bottom: 14px; }
+/* Model test cards */
+.model-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.model-card { border-radius: 12px; padding: 16px; color: #fff; cursor: pointer; position: relative; min-height: 110px; transition: .2s; overflow: hidden; }
+.model-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.2); }
+.model-card .live { position: absolute; top: 8px; right: 8px; background: #e53935; color: #fff; font-size: .65rem; font-weight: 700; border-radius: 8px; padding: 2px 8px; }
+.model-card h3 { font-size: 1.15rem; margin-bottom: 4px; }
+.model-card p { font-size: .8rem; opacity: .92; }
+.model-card .yr { margin-top: 10px; font-size: .85rem; font-weight: 600; }
+/* Subject cards */
+.subj-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.subj-card { border-radius: 12px; padding: 18px 14px; color: #fff; cursor: pointer; min-height: 130px; display: flex; flex-direction: column; justify-content: space-between; transition: .2s; position: relative; overflow: hidden; }
+.subj-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.2); }
+.subj-card h3 { font-size: 1rem; line-height: 1.4; }
+.subj-card .big-ico { font-size: 3rem; text-align: right; opacity: .85; line-height: 1; }
+.subj-card .cnt { font-size: .75rem; opacity: .9; margin-top: 6px; }
+/* Uni cards */
+.uni-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.uni-card { border-radius: 12px; padding: 20px 14px; color: #fff; cursor: pointer; text-align: center; transition: .2s; }
+.uni-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.2); }
+.uni-card .u-logo { width: 52px; height: 52px; background: rgba(255,255,255,.95); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+.uni-card h3 { font-size: 1rem; }
+.uni-card .cnt { font-size: .75rem; opacity: .9; margin-top: 4px; }
+/* Question view */
+#qview { display: none; }
+.back-btn { cursor: pointer; color: var(--green); font-weight: 700; margin-bottom: 14px; display: inline-block; }
+.q-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
+.q-num { display: inline-block; background: var(--green); color: #fff; font-weight: 700; border-radius: 6px; padding: 2px 10px; margin-bottom: 8px; font-size: .8rem; }
+.q-text { font-size: 1rem; font-weight: 600; margin-bottom: 10px; line-height: 1.6; white-space: pre-line; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.opt { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: .9rem; }
+.opt b { color: var(--green); }
+.ans { background: #e8f5e9; border-radius: 8px; padding: 10px 14px; } [data-theme="dark"] .ans { background: #064e3b; }
+.ans .correct { color: var(--green); font-weight: 700; }
+.ans .expl { margin-top: 6px; font-size: .86rem; color: var(--muted); line-height: 1.6; }
+@media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; } .model-grid, .subj-grid, .uni-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 500px) { .opts { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">📚 পরীক্ষা</div>
+  <a class="nav-item" href="/dashboard.html"><span>🏠</span> ড্যাশবোর্ড</a>
+  <a class="nav-item active" href="/qbank.html"><span>📖</span> প্রশ্নব্যাংক</a>
+  <a class="nav-item" href="/exams.html"><span>🎯</span> অ্যাডমিশন</a>
+  <a class="nav-item" href="/exams.html"><span>📝</span> পরীক্ষা</a>
+  <a class="nav-item" href="/practice.html"><span>⚡</span> কুইক প্র্যাকটিস</a>
+  <a class="nav-item" href="/bookmarks.html"><span>🔖</span> হিস্ট্রি</a>
+  <a class="nav-item" href="/leaderboard.html"><span>🏆</span> লিডারবোর্ড</a>
+  <a class="nav-item" href="/pricing.html"><span>⭐</span> প্রিমিয়াম</a>
+</nav>
+<div class="main">
+  <div class="topbar"><h1>প্রশ্নব্যাংক</h1><button class="theme-btn" onclick="toggleTheme()">🌙</button></div>
+  <div class="content">
+    <div id="home-view">
+      <div class="tabrow">
+        <div class="tabs">
+          <button class="tab active" onclick="setTab('model',this)">মডেল টেস্ট</button>
+          <button class="tab" onclick="setTab('subject',this)">বিষয় ভিত্তিক</button>
+          <button class="tab" onclick="setTab('uni',this)">প্রতিষ্ঠান ভিত্তিক</button>
+        </div>
+        <input class="search" id="search" placeholder="🔍 প্রশ্নব্যাংক খুঁজো" oninput="render()">
+      </div>
+      <div id="sections"></div>
+    </div>
+    <div id="qview">
+      <span class="back-btn" onclick="goHome()">← ফিরে যাও</span>
+      <h2 id="qv-title" style="margin-bottom:14px"></h2>
+      <div id="qlist"></div>
+    </div>
+  </div>
+</div>
+<script>
+function toggleTheme(){const t=document.documentElement.getAttribute('data-theme')==='dark'?'':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);}
+if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-theme','dark');
+
+let curTab='model';
+// Data
+const MODELS=[
+ {t:'ভার্সিটি',s:'ক ইউনিট',g:'linear-gradient(135deg,#f9a825,#f57f17)',q:120},
+ {t:'ভার্সিটি',s:'খ ইউনিট',g:'linear-gradient(135deg,#ff8f00,#ef6c00)',q:148},
+ {t:'ভার্সিটি',s:'গ ইউনিট',g:'linear-gradient(135deg,#43a047,#2e7d32)',q:150},
+ {t:'এডমিশন',s:'মডেল টেস্ট',g:'linear-gradient(135deg,#1e88e5,#0d47a1)',q:100,yr:'বাণিজ্য ২০২৬'},
+ {t:'এডমিশন',s:'মডেল টেস্ট',g:'linear-gradient(135deg,#ab47bc,#7b1fa2)',q:89,yr:'RU B 25-26',id:'ru-b-2526'},
+];
+const SUBJECTS=[
+ {t:'বাংলা',s:'১ম পত্র',g:'linear-gradient(135deg,#9e9d24,#827717)',i:'অ',q:30,id:'hsc-2026-bangla1'},
+ {t:'বাংলা',s:'২য় পত্র',g:'linear-gradient(135deg,#fb8c00,#ef6c00)',i:'আ',q:0},
+ {t:'ইংরেজি',s:'১ম পত্র',g:'linear-gradient(135deg,#c62828,#8e0000)',i:'A',q:0},
+ {t:'ইংরেজি',s:'২য় পত্র',g:'linear-gradient(135deg,#d32f2f,#b71c1c)',i:'a',q:0},
+ {t:'একাউন্টিং',s:'১ম পত্র',g:'linear-gradient(135deg,#00897b,#00695c)',i:'🧮',q:20,id:'ru-acc'},
+ {t:'একাউন্টিং',s:'২য় পত্র',g:'linear-gradient(135deg,#00796b,#004d40)',i:'📊',q:0},
+ {t:'ম্যানেজমেন্ট',s:'১ম পত্র',g:'linear-gradient(135deg,#5e35b1,#4527a0)',i:'👔',q:19,id:'ru-mgmt'},
+ {t:'ম্যানেজমেন্ট',s:'২য় পত্র',g:'linear-gradient(135deg,#512da8,#311b92)',i:'📋',q:0},
+ {t:'ফিন্যান্স',s:'১ম পত্র',g:'linear-gradient(135deg,#1e88e5,#1565c0)',i:'💰',q:12,id:'ru-fin'},
+ {t:'ফিন্যান্স',s:'২য় পত্র',g:'linear-gradient(135deg,#1976d2,#0d47a1)',i:'🏦',q:0},
+ {t:'মার্কেটিং',s:'১ম পত্র',g:'linear-gradient(135deg,#7cb342,#558b2f)',i:'📣',q:11,id:'ru-mkt'},
+ {t:'মার্কেটিং',s:'২য় পত্র',g:'linear-gradient(135deg,#689f38,#33691e)',i:'🎯',q:0},
+];
+const UNIS=[
+ {t:'ঢাবি',g:'linear-gradient(135deg,#64b5f6,#1e88e5)',i:'🎓',q:100},
+ {t:'রাবি',g:'linear-gradient(135deg,#4dd0e1,#00acc1)',i:'🎓',q:89,id:'ru-b-2526'},
+ {t:'চবি',g:'linear-gradient(135deg,#4db6ac,#00897b)',i:'🎓',q:0},
+ {t:'আইবিএ',g:'linear-gradient(135deg,#ba68c8,#8e24aa)',i:'💼',q:0},
+ {t:'গুচ্ছ',g:'linear-gradient(135deg,#f06292,#c2185b)',i:'🏛️',q:446},
+ {t:'জবি',g:'linear-gradient(135deg,#aed581,#7cb342)',i:'🎓',q:0},
+ {t:'কুবি',g:'linear-gradient(135deg,#4db6ac,#00796b)',i:'🎓',q:0},
+ {t:'জাবি',g:'linear-gradient(135deg,#81c784,#43a047)',i:'🎓',q:0},
+];
+function setTab(t,el){curTab=t;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');render();}
+function render(){
+ const q=document.getElementById('search').value.toLowerCase();
+ let h='';
+ if(curTab==='model'){
+  const list=MODELS.filter(m=>(m.t+m.s).toLowerCase().includes(q));
+  h+='<div class="sec green-bg"><h2>মডেল টেস্ট</h2><div class="sub">সেরা প্রস্তুতির জন্য স্পেশাল মডেল টেস্ট</div><div class="model-grid">'+
+   list.map(m=>'<div class="model-card" style="background:'+m.g+'" onclick="openQ(\''+(m.id||'')+'\',\''+m.t+' '+m.s+'\')"><span class="live">🔴 Live</span><h3>'+m.t+'</h3><p>'+m.s+'</p>'+(m.yr?'<div class="yr">📅 '+m.yr+'</div>':'')+'<div style="margin-top:8px;font-size:.8rem">📝 '+m.q+'টি প্রশ্ন</div></div>').join('')+'</div></div>';
+ }
+ if(curTab==='subject'){
+  const list=SUBJECTS.filter(m=>(m.t+m.s).toLowerCase().includes(q));
+  h+='<div class="sec mint-bg"><h2>বিষয় ভিত্তিক</h2><div class="sub">সকল বিষয়ের প্রশ্নব্যাংক</div><div class="subj-grid">'+
+   list.map(m=>'<div class="subj-card" style="background:'+m.g+'" onclick="openQ(\''+(m.id||'')+'\',\''+m.t+' '+m.s+'\')"><h3>'+m.t+'<br>'+m.s+'</h3><div class="big-ico">'+m.i+'</div><div class="cnt">'+m.q+'টি প্রশ্ন</div></div>').join('')+'</div></div>';
+ }
+ if(curTab==='uni'){
+  const list=UNIS.filter(m=>m.t.toLowerCase().includes(q));
+  h+='<div class="sec olive-bg"><h2>প্রতিষ্ঠান ভিত্তিক</h2><div class="sub">বিগত বছরের ভর্তি পরীক্ষার প্রশ্ন</div><div class="uni-grid">'+
+   list.map(m=>'<div class="uni-card" style="background:'+m.g+'" onclick="openQ(\''+(m.id||'')+'\',\''+m.t+'\')"><div class="u-logo">'+m.i+'</div><h3>'+m.t+'</h3><div class="cnt">'+m.q+'টি প্রশ্ন</div></div>').join('')+'</div></div>';
+ }
+ document.getElementById('sections').innerHTML=h||'<p style="color:var(--muted)">কিছু পাওয়া যায়নি</p>';
+}
+function openQ(id,title){
+ if(!id){alert('শীঘ্রই আসছে!');return;}
+ document.getElementById('home-view').style.display='none';
+ document.getElementById('qview').style.display='block';
+ document.getElementById('qv-title').textContent=title;
+ document.getElementById('qlist').innerHTML='<p>লোড হচ্ছে...</p>';
+ fetch('/api/qbank/'+id,{headers:{'Authorization':'Bearer '+localStorage.getItem('token')}}).then(r=>r.json()).then(showQ).catch(()=>{document.getElementById('qlist').innerHTML='<p style="color:var(--muted)">লগইন করে আবার চেষ্টা করো।</p>';});
+ window.scrollTo(0,0);
+}
+function showQ(qs){
+ const ABC=['ক','খ','গ','ঘ'];
+ document.getElementById('qlist').innerHTML=qs.map((x,i)=>'<div class="q-card"><span class="q-num">'+(i+1)+'</span><div class="q-text">'+esc(x.question_text)+'</div><div class="opts">'+['option_a','option_b','option_c','option_d'].map((k,j)=>'<div class="opt"><b>'+ABC[j]+'.</b> '+esc(x[k])+'</div>').join('')+'</div>'+(x.correct_option?'<div class="ans"><span class="correct">✅ উত্তর: ('+ABC['abcd'.indexOf(x.correct_option)]+') '+esc(x['option_'+x.correct_option])+'</span>'+(x.explanation?'<div class="expl">'+esc(x.explanation)+'</div>':'')+'</div>':'')+'</div>').join('');
+}
+function esc(t){if(!t)return '';const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function goHome(){document.getElementById('qview').style.display='none';document.getElementById('home-view').style.display='block';}
+render();
+</script>
+</body>
+</html>
