@@ -36,7 +36,7 @@
         </div>
         <div>
           <label data-i18n="label_qcount">প্রশ্ন সংখ্যা</label>
-          <select id="f-limit"><option>5</option><option selected>10</option><option>20</option><option>30</option></select>
+          <input type="number" id="f-limit" min="1" max="100" value="10" style="max-width:120px">
         </div>
       </div>
       <h3 style="margin-top:12px" data-i18n="h3_prev_year">বিগত বছরের প্রশ্ন</h3>
@@ -140,7 +140,7 @@ async function startPractice() {
     chapter_ids: chIds.length ? chIds : undefined,
     topic_ids: tpIds.length ? tpIds : undefined,
     difficulty: document.getElementById('f-diff').value || undefined,
-    limit: Number(document.getElementById('f-limit').value),
+    limit: Math.min(100, Math.max(1, parseInt(document.getElementById('f-limit').value, 10) || 10)),
     prev_year: document.getElementById('f-prevyear').checked || undefined,
     year: document.getElementById('f-year').value ? Number(document.getElementById('f-year').value) : undefined,
     source: document.getElementById('f-source').value.trim() || undefined,

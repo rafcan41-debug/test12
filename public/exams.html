@@ -17,9 +17,7 @@
       <div><label data-i18n="label_class">ক্লাস<br><select id="q-cat" style="min-width:180px"><option value="" data-i18n="opt_all">— সব —</option></select></div>
       <div id="q-grp-wrap" style="display:none"><label data-i18n="label_grp_filter">গ্রুপ<br><select id="q-grp" style="min-width:180px"><option value="" data-i18n="opt_all">— সব —</option></select></div>
       <div><label data-i18n="label_subject">বিষয়<br><select id="q-sub" style="min-width:180px"><option value="" data-i18n="opt_select">— বাছাই করো —</option></select></div>
-      <div><label data-i18n="label_qcount">প্রশ্ন সংখ্যা<br><select id="q-limit" style="min-width:100px">
-        <option value="10">10</option><option value="20" selected>20</option><option value="30">30</option><option value="50">50</option>
-      </select></div>
+      <div><label data-i18n="label_qcount">প্রশ্ন সংখ্যা<br><input type="number" id="q-limit" min="5" max="100" value="20" style="min-width:100px"></div>
     </div>
     <div style="margin:12px 0">
       <div><label data-i18n="label_chapter">অধ্যায় <span class="muted" data-i18n="multi_hint">(একাধিক বাছাই করা যাবে)</span></label>
@@ -94,7 +92,7 @@ const T = PK.lang.t;
   function fillQSubjects(c) {
     const g = document.getElementById('q-grp-wrap').style.display === 'block' ? document.getElementById('q-grp').value : '';
     qSub.innerHTML = `<option value="">${T('opt_select')}</option>`;
-    (c ? c.subjects.filter(s => !g || s.grp === g) : []).forEach(s => qSub.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
+    (c ? c.subjects.filter(s => !g || s.grp === g || s.grp === 'common') : []).forEach(s => qSub.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
   }
   qCat.onchange = () => {
     const c = catalog.categories.find(x => x.id == qCat.value);
@@ -115,7 +113,7 @@ const T = PK.lang.t;
   document.getElementById('q-start').onclick = async () => {
     if (!qSub.value) { PK.toast(T('pick_subject_first')); return; }
     const chIds = qCheckedIds(qChapters), tpIds = qCheckedIds(qTopics);
-    const body = { subject_id: qSub.value, limit: qLimit.value };
+    const body = { subject_id: qSub.value, limit: Math.min(100, Math.max(5, parseInt(qLimit.value, 10) || 20)) };
     if (chIds.length) body.chapter_ids = chIds;
     if (tpIds.length) body.topic_ids = tpIds;
     try {
@@ -133,7 +131,7 @@ const T = PK.lang.t;
         try { sid = JSON.parse(e.filter_json || '{}').subject_id; } catch (_) {}
         const c = cat.categories.find(x => x.id == e.category_id);
         const s = c && c.subjects.find(x => x.id == sid);
-        if (!s || s.grp !== gv) return false;
+        if (!s || (s.grp !== gv && s.grp !== 'common')) return false;
       }
       return true;
     });
