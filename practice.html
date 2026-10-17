@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="title_practice">প্র্যাকটিস — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <h2 data-i18n="h2_practice">কুইক প্র্যাকটিস</h2>
+
+    <div id="setup" class="card">
+      <div class="two-col">
+        <div>
+          <label data-i18n="label_category">ক্যাটাগরি<select id="f-cat"><option value="" data-i18n="opt_all">— সব —</option></select>
+          <label data-i18n="label_subject">বিষয়<select id="f-sub"><option value="" data-i18n="opt_all">— সব —</option></select>
+          <div id="grp-wrap" style="display:none">
+            <label data-i18n="label_grp_filter">গ্রুপ<select id="f-grp"><option value="" data-i18n="opt_all">— সব —</option></select>
+          </div>
+        </div>
+        <div>
+          <label data-i18n="label_chapter">অধ্যায়</label>
+          <div id="f-ch-list" class="check-list"><span class="muted" data-i18n="pick_subject_first">আগে বিষয় বাছাই করো</span></div>
+          <label data-i18n="label_topic">টপিক</label>
+          <div id="f-tp-list" class="check-list"><span class="muted" data-i18n="pick_chapter_first">আগে অধ্যায় বাছাই করো</span></div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label data-i18n="label_difficulty">কাঠিন্য</label>
+          <select id="f-diff"><option value="" data-i18n="opt_all">— সব —</option><option value="easy" data-i18n="diff_easy">সহজ</option><option value="medium" data-i18n="diff_medium">মাঝারি</option><option value="hard" data-i18n="diff_hard">কঠিন</option></select>
+        </div>
+        <div>
+          <label data-i18n="label_qcount">প্রশ্ন সংখ্যা</label>
+          <input type="number" id="f-limit" min="1" max="100" value="10" style="max-width:120px">
+        </div>
+      </div>
+      <h3 style="margin-top:12px" data-i18n="h3_prev_year">বিগত বছরের প্রশ্ন</h3>
+      <div class="two-col">
+        <div>
+          <label><input type="checkbox" id="f-prevyear" style="width:auto"> <span data-i18n="label_prev_only">শুধু বিগত বছরের প্রশ্ন</span></label>
+          <label data-i18n="label_year">বছর (যেমন 2024)<input id="f-year" type="number" min="1990" max="2100" data-i18n-ph="ph_year" placeholder="যেমন: 2024">
+        </div>
+        <div>
+          <label data-i18n="label_source">উৎস (যেমন: SSC Dhaka Board)<input id="f-source" data-i18n-ph="ph_source" placeholder="যেমন: Medical Admission">
+        </div>
+      </div>
+      <button class="btn" onclick="startPractice()" data-i18n="btn_start_practice">প্র্যাকটিস শুরু করো</button>
+    </div>
+
+    <div id="run" style="display:none">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <b id="p-progress"></b><span id="p-score" class="muted"></span>
+        </div>
+        <div id="p-q"></div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn secondary" id="p-next" onclick="nextQ()" disabled data-i18n="btn_next_q">পরের প্রশ্ন →</button>
+          <button class="btn danger" onclick="finishSession()" data-i18n="btn_finish">শেষ করো</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="done" class="card" style="display:none"></div>
+
+    <h2 style="margin-top:24px" data-i18n="h2_history">প্র্যাকটিস হিস্ট্রি</h2>
+    <div id="history"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
+<script>
+let CAT = [], sessionId = null, qs = [], idx = 0, correct = 0, answered = 0;
+const T = PK.lang.t;
+const ALL = () => `<option value="">${T('opt_all')}</option>`;
+
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  await PK.nav('practice');
+  const d = await PK.api('/api/catalog');
+  CAT = d.categories;
+  const cs = document.getElementById('f-cat');
+  CAT.forEach(c => cs.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
+  const GRPS = ['common', 'science', 'business', 'humanities'];
+  const grpSelect = document.getElementById('f-grp'), grpWrap = document.getElementById('grp-wrap');
+  const checkedIds = (el) => [...el.querySelectorAll('input[type=checkbox]:checked')].map(x => Number(x.value));
+  function fillSubjects(c) {
+    const g = grpWrap.style.display === 'block' ? grpSelect.value : '';
+    const ss = document.getElementById('f-sub'); ss.innerHTML = ALL();
+    (c ? c.subjects.filter(s => !g || s.grp === g || s.grp === 'common') : []).forEach(s => ss.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
+    fillChapters();
+  }
+  function fillChapters() {
+    const c = CAT.find(x => x.id == cs.value);
+    const s = c && c.subjects.find(x => x.id == document.getElementById('f-sub').value);
+    const box = document.getElementById('f-ch-list');
+    const chs = (s && s.chapters) || [];
+    box.innerHTML = chs.length ? chs.map(x => `<label class="check"><input type="checkbox" value="${x.id}"> ${PK.esc(x.name_bn)}</label>`).join('') : `<span class="muted">${T('no_chapters')}</span>`;
+    box.querySelectorAll('input').forEach(i => i.onchange = fillTopics);
+    fillTopics();
+  }
+  function fillTopics() {
+    const c = CAT.find(x => x.id == cs.value);
+    const s = c && c.subjects.find(x => x.id == document.getElementById('f-sub').value);
+    const selCh = checkedIds(document.getElementById('f-ch-list'));
+    const box = document.getElementById('f-tp-list');
+    let tps = [];
+    if (s && s.chapters) for (const ch of s.chapters) {
+      if (!selCh.length || selCh.includes(ch.id)) for (const t of (ch.topics || [])) tps.push(t);
+    }
+    box.innerHTML = tps.length ? tps.map(x => `<label class="check"><input type="checkbox" value="${x.id}"> ${PK.esc(x.name_bn)}</label>`).join('') : `<span class="muted">${T('no_topics')}</span>`;
+  }
+  cs.onchange = () => {
+    const c = CAT.find(x => x.id == cs.value);
+    if (c && (c.slug === 'ssc' || c.slug === 'hsc')) {
+      grpWrap.style.display = 'block';
+      grpSelect.innerHTML = ALL();
+      GRPS.forEach(g => grpSelect.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
+    } else {
+      grpWrap.style.display = 'none'; grpSelect.value = '';
+    }
+    fillSubjects(c);
+  };
+  grpSelect.onchange = () => fillSubjects(CAT.find(x => x.id == cs.value));
+  document.getElementById('f-sub').onchange = fillChapters;
+  loadHistory();
+})();
+
+const val = id => { const v = document.getElementById(id).value; return v ? (isNaN(v) || id === 'f-source' ? v : Number(v)) : undefined; };
+
+async function startPractice() {
+  const chIds = [...document.getElementById('f-ch-list').querySelectorAll('input[type=checkbox]:checked')].map(x => Number(x.value));
+  const tpIds = [...document.getElementById('f-tp-list').querySelectorAll('input[type=checkbox]:checked')].map(x => Number(x.value));
+  const body = {
+    subject_id: val('f-sub'),
+    chapter_ids: chIds.length ? chIds : undefined,
+    topic_ids: tpIds.length ? tpIds : undefined,
+    difficulty: document.getElementById('f-diff').value || undefined,
+    limit: Math.min(100, Math.max(1, parseInt(document.getElementById('f-limit').value, 10) || 10)),
+    prev_year: document.getElementById('f-prevyear').checked || undefined,
+    year: document.getElementById('f-year').value ? Number(document.getElementById('f-year').value) : undefined,
+    source: document.getElementById('f-source').value.trim() || undefined,
+  };
+  try {
+    const d = await PK.api('/api/practice/start', { method: 'POST', body });
+    sessionId = d.session_id; qs = d.questions; idx = 0; correct = 0; answered = 0;
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('run').style.display = 'block';
+    document.getElementById('done').style.display = 'none';
+    renderQ();
+  } catch (e) { PK.toast(e.message); }
+}
+
+function renderQ() {
+  const q = qs[idx];
+  document.getElementById('p-progress').textContent = `${T('q_progress')} ${idx + 1} / ${qs.length}`;
+  document.getElementById('p-score').textContent = `${T('correct_label')} ${correct}`;
+  document.getElementById('p-next').disabled = true;
+  document.getElementById('p-next').textContent = T('btn_next_q');
+  document.getElementById('p-q').innerHTML = `
+    <h3 style="margin:12px 0">${PK.esc(q.question_text)}</h3>
+    ${['a','b','c','d'].map(o => `<button class="option" data-o="${o}" onclick="answer('${o}')"><b>${o.toUpperCase()}.</b> ${PK.esc(q['option_'+o])}</button>`).join('')}
+    <div id="p-fb"></div>`;
+}
+
+async function answer(sel) {
+  const q = qs[idx];
+  document.querySelectorAll('#p-q .option').forEach(b => b.disabled = true);
+  try {
+    const d = await PK.api(`/api/practice/${sessionId}/answer`, { method: 'POST', body: { question_id: q.id, selected: sel } });
+    answered++;
+    if (d.correct) correct++;
+    document.querySelectorAll('#p-q .option').forEach(b => {
+      if (b.dataset.o === d.correct_option) b.classList.add('correct');
+      else if (b.dataset.o === sel) b.classList.add('wrong');
+    });
+    document.getElementById('p-fb').innerHTML = `
+      <div class="explain"><b>${d.correct ? T('fb_correct') : T('fb_wrong_answer') + d.correct_option.toUpperCase()}</b>
+      ${d.explanation ? '<br>' + PK.esc(d.explanation) : ''}</div>`;
+    document.getElementById('p-next').disabled = false;
+    document.getElementById('p-next').textContent = idx + 1 < qs.length ? T('btn_next_q') : T('btn_show_result');
+  } catch (e) { PK.toast(e.message); }
+}
+
+function nextQ() {
+  if (idx + 1 < qs.length) { idx++; renderQ(); }
+  else finishSession();
+}
+
+async function finishSession() {
+  try { await PK.api(`/api/practice/${sessionId}/finish`, { method: 'POST' }); } catch (e) {}
+  document.getElementById('run').style.display = 'none';
+  const d = document.getElementById('done');
+  d.style.display = 'block';
+  d.innerHTML = `<h2>${T('session_done')}</h2><p>${T('total_q')} ${qs.length} | ${T('correct_label')} <b class="pass">${correct}</b> | ${T('wrong_label')} <b class="fail">${answered - correct}</b></p>
+    <button class="btn" onclick="location.reload()">${T('btn_new_practice')}</button>`;
+  loadHistory();
+}
+
+async function loadHistory() {
+  try {
+    const d = await PK.api('/api/practice/history');
+    document.getElementById('history').innerHTML = d.sessions.length ? `<table>
+      <tr><th>${T('th_date')}</th><th>${T('th_total')}</th><th>${T('th_correct')}</th><th>${T('th_status')}</th></tr>
+      ${d.sessions.map(s => `<tr><td>${PK.esc(s.created_at.slice(0,16))}</td><td>${s.total}</td><td>${s.correct}</td><td>${s.status === 'finished' ? T('status_finished') : T('status_ongoing')}</td></tr>`).join('')}
+      </table>` : `<p class="muted">${T('no_practice')}</p>`;
+  } catch (e) {}
+}
+</script>
+</body>
+</html>

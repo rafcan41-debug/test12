@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="title_exams">মডেল টেস্ট — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <h2 data-i18n="h2_quick_test">কুইক অধ্যায় টেস্ট</h2>
+    <p class="muted" data-i18n="quick_test_desc">ক্লাস → বিষয় → অধ্যায় বেছে নিয়ে সাথে সাথে টেস্ট দাও।</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+      <div><label data-i18n="label_class">ক্লাস<br><select id="q-cat" style="min-width:180px"><option value="" data-i18n="opt_all">— সব —</option></select></div>
+      <div id="q-grp-wrap" style="display:none"><label data-i18n="label_grp_filter">গ্রুপ<br><select id="q-grp" style="min-width:180px"><option value="" data-i18n="opt_all">— সব —</option></select></div>
+      <div><label data-i18n="label_subject">বিষয়<br><select id="q-sub" style="min-width:180px"><option value="" data-i18n="opt_select">— বাছাই করো —</option></select></div>
+      <div><label data-i18n="label_qcount">প্রশ্ন সংখ্যা<br><input type="number" id="q-limit" min="5" max="100" value="20" style="min-width:100px"></div>
+    </div>
+    <div style="margin:12px 0">
+      <div><label data-i18n="label_chapter">অধ্যায় <span class="muted" data-i18n="multi_hint">(একাধিক বাছাই করা যাবে)</span></label>
+        <div id="q-chapters" class="check-list"><span class="muted" data-i18n="pick_subject_first">আগে বিষয় বাছাই করো</span></div>
+      </div>
+      <div style="margin-top:8px"><label data-i18n="label_topic">টপিক <span class="muted" data-i18n="multi_hint">(একাধিক বাছাই করা যাবে)</span></label>
+        <div id="q-topics" class="check-list"><span class="muted" data-i18n="pick_chapter_first">আগে অধ্যায় বাছাই করো</span></div>
+      </div>
+    </div>
+    <button class="btn" id="q-start" data-i18n="btn_start_quick">টেস্ট শুরু করো</button>
+  </div>
+
+  <div class="section">
+    <h2 data-i18n="h2_exams">মডেল টেস্ট</h2>
+    <div style="margin-bottom:12px"><label data-i18n="filter_category">ক্যাটাগরি ফিল্টার <select id="f-cat" style="max-width:320px"><option value="" data-i18n="opt_all">— সব —</option></select><span id="f-grp-wrap" style="display:none;margin-left:12px"><label data-i18n="label_grp_filter">গ্রুপ <select id="f-grp" style="max-width:220px"><option value="" data-i18n="opt_all">— সব —</option></select></span></div>
+    <div class="grid" id="exams"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
+<script>
+const T = PK.lang.t;
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  await PK.nav('exams');
+  const cat = await PK.api('/api/catalog');
+  const sel = document.getElementById('f-cat');
+  const urlCat = new URLSearchParams(location.search).get('cat');
+  cat.categories.forEach(c => sel.innerHTML += `<option value="${c.id}" ${urlCat == c.id ? 'selected' : ''}>${PK.esc(c.name_bn)}</option>`);
+  sel.onchange = () => {
+    const c = cat.categories.find(x => x.id == sel.value);
+    const fw = document.getElementById('f-grp-wrap'), fs = document.getElementById('f-grp');
+    if (c && (c.slug === 'ssc' || c.slug === 'hsc')) {
+      fw.style.display = 'inline';
+      fs.innerHTML = `<option value="">${T('opt_all')}</option>`;
+      ['common', 'science', 'business', 'humanities'].forEach(g => fs.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
+    } else { fw.style.display = 'none'; fs.value = ''; }
+    load();
+  };
+  document.getElementById('f-grp').onchange = load;
+  if (urlCat) sel.onchange();
+  load();
+
+  // --- quick chapter test ---
+  const qCat = document.getElementById('q-cat'), qSub = document.getElementById('q-sub'),
+        qChapters = document.getElementById('q-chapters'), qTopics = document.getElementById('q-topics'),
+        qLimit = document.getElementById('q-limit');
+  let catalog = cat;
+  cat.categories.forEach(c => qCat.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
+  const QGRPS = ['common', 'science', 'business', 'humanities'];
+  const qCheckedIds = (el) => [...el.querySelectorAll('input[type=checkbox]:checked')].map(x => Number(x.value));
+  function qSubject() {
+    const c = catalog.categories.find(x => x.id == qCat.value);
+    return c ? c.subjects.find(x => x.id == qSub.value) : null;
+  }
+  function fillQChapters() {
+    const s = qSubject();
+    const chs = (s && s.chapters) || [];
+    qChapters.innerHTML = chs.length ? chs.map(x => `<label class="check"><input type="checkbox" value="${x.id}"> ${PK.esc(x.name_bn)}</label>`).join('') : `<span class="muted">${T('no_chapters')}</span>`;
+    qChapters.querySelectorAll('input').forEach(i => i.onchange = fillQTopics);
+    fillQTopics();
+  }
+  function fillQTopics() {
+    const s = qSubject();
+    const selCh = qCheckedIds(qChapters);
+    let tps = [];
+    if (s && s.chapters) for (const ch of s.chapters) {
+      if (!selCh.length || selCh.includes(ch.id)) for (const t of (ch.topics || [])) tps.push(t);
+    }
+    qTopics.innerHTML = tps.length ? tps.map(x => `<label class="check"><input type="checkbox" value="${x.id}"> ${PK.esc(x.name_bn)}</label>`).join('') : `<span class="muted">${T('no_topics')}</span>`;
+  }
+  function fillQSubjects(c) {
+    const g = document.getElementById('q-grp-wrap').style.display === 'block' ? document.getElementById('q-grp').value : '';
+    qSub.innerHTML = `<option value="">${T('opt_select')}</option>`;
+    (c ? c.subjects.filter(s => !g || s.grp === g || s.grp === 'common') : []).forEach(s => qSub.innerHTML += `<option value="${s.id}">${PK.esc(s.name_bn)}</option>`);
+  }
+  qCat.onchange = () => {
+    const c = catalog.categories.find(x => x.id == qCat.value);
+    const qw = document.getElementById('q-grp-wrap'), qgs = document.getElementById('q-grp');
+    if (c && (c.slug === 'ssc' || c.slug === 'hsc')) {
+      qw.style.display = 'block';
+      qgs.innerHTML = `<option value="">${T('opt_all')}</option>`;
+      QGRPS.forEach(g => qgs.innerHTML += `<option value="${g}">${T('grp_' + g)}</option>`);
+    } else { qw.style.display = 'none'; qgs.value = ''; }
+    fillQSubjects(c);
+    fillQChapters();
+  };
+  document.getElementById('q-grp').onchange = () => {
+    fillQSubjects(catalog.categories.find(x => x.id == qCat.value));
+    fillQChapters();
+  };
+  qSub.onchange = () => fillQChapters();
+  document.getElementById('q-start').onclick = async () => {
+    if (!qSub.value) { PK.toast(T('pick_subject_first')); return; }
+    const chIds = qCheckedIds(qChapters), tpIds = qCheckedIds(qTopics);
+    const body = { subject_id: qSub.value, limit: Math.min(100, Math.max(5, parseInt(qLimit.value, 10) || 20)) };
+    if (chIds.length) body.chapter_ids = chIds;
+    if (tpIds.length) body.topic_ids = tpIds;
+    try {
+      const d = await PK.api('/api/exams/quick', { method: 'POST', body });
+      location.href = '/exam.html?id=' + d.exam_id;
+    } catch (e) { PK.toast(e.message); }
+  };
+  async function load() {
+    const d = await PK.api('/api/exams');
+    const gv = document.getElementById('f-grp').value;
+    const list = d.exams.filter(e => {
+      if (sel.value && e.category_id != sel.value) return false;
+      if (gv) {
+        let sid = null;
+        try { sid = JSON.parse(e.filter_json || '{}').subject_id; } catch (_) {}
+        const c = cat.categories.find(x => x.id == e.category_id);
+        const s = c && c.subjects.find(x => x.id == sid);
+        if (!s || (s.grp !== gv && s.grp !== 'common')) return false;
+      }
+      return true;
+    });
+    document.getElementById('exams').innerHTML = list.length ? list.map(e => `
+      <div class="card">
+        <h3>${PK.esc(e.title)}</h3>
+        <p class="muted">${PK.esc(e.category_name || '')} • ${IC.clock} ${e.duration_min} ${T('min_unit')} • ${e.question_limit}${T('q_count_suffix')}${e.negative_mark ? ` • −${e.negative_mark} ${T('negative')}` : ''}</p>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <a class="btn small" href="/exam.html?id=${e.id}">${T('btn_take_exam')}</a>
+          <a class="btn small secondary" href="/leaderboard.html?exam=${e.id}">${T('btn_lb')}</a>
+        </div>
+      </div>`).join('') : `<p class="muted">${T('no_exams')}</p>`;
+  }
+})();
+</script>
+</body>
+</html>
