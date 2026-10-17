@@ -58,6 +58,7 @@ const PK = {
     const IC_EDIT = _ic('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>');
     const links = [
       ['/', T('nav_home', 'হোম'), 'home'],
+      ['/qbank.html', T('nav_qbank', '📖 প্রশ্নব্যাংক'), 'qbank'],
       ['/exams.html', T('nav_exams', 'পরীক্ষা'), 'exams'],
       ['/custom-exam.html', T('nav_custom', IC_TARGET + ' কাস্টম'), 'custom-exam'],
       ['/practice.html', T('nav_practice', 'প্র্যাকটিস'), 'practice'],
