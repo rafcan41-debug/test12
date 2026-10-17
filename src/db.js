@@ -58,6 +58,7 @@ function initSchema() {
   ensureClass610Subjects(); // fixed ids 100-148 for class 6-10 question packs
   ensureSubjectGroups(); // tag class 9-10 subjects with group (common/science/business/humanities)
   ensureClass1112Subjects(); // fixed ids 200+ for class 11-12 (HSC) question bank
+  ensureAdmissionSubjects(); // fixed ids 300-307 for university admission previous-year questions
   backfillChapters(); // build chapters from question tags (idempotent)
 }
 
@@ -241,6 +242,31 @@ function ensureClass1112Subjects() {
   if (added) console.log(`[migrate] added ${added} class 11-12 subjects (ids 200+)`);
 }
 
+// Ensure university admission subjects exist with FIXED ids (300-307)
+// so previous-year question files can reference them on fresh AND already-seeded DBs.
+function ensureAdmissionSubjects() {
+  const cat = db.prepare("SELECT id FROM categories WHERE slug = 'varsity'").get();
+  if (!cat) return;
+  const defs = [
+    // [id, name_bn, name_en]
+    [300, 'ঢাকা বিশ্ববিদ্যালয় (DU)', 'Dhaka University (DU)'],
+    [301, 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় (JU)', 'Jahangirnagar University (JU)'],
+    [302, 'জগন্নাথ বিশ্ববিদ্যালয় (JnU)', 'Jagannath University (JnU)'],
+    [303, 'রাজশাহী বিশ্ববিদ্যালয় (RU)', 'Rajshahi University (RU)'],
+    [304, 'খুলনা বিশ্ববিদ্যালয় (KU)', 'Khulna University (KU)'],
+    [305, 'কুমিল্লা বিশ্ববিদ্যালয় (CoU)', 'Comilla University (CoU)'],
+    [306, 'গুচ্ছ (GST)', 'GST Cluster'],
+    [307, 'কৃষি গুচ্ছ (Agri-GST)', 'Agricultural GST'],
+  ];
+  const ins = db.prepare(`INSERT INTO subjects (id, category_id, name_bn, name_en, grp)
+    SELECT ?, ?, ?, ?, 'admission' WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE id = ?)`);
+  let added = 0;
+  for (const [id, bn, en] of defs) {
+    added += ins.run(id, cat.id, bn, en, id).changes;
+  }
+  if (added) console.log(`[migrate] added ${added} admission subjects (ids 300-307)`);
+}
+
 // Ensure the two extra primary subjects exist with FIXED ids (40, 41)
 // so question import files can reference them on fresh AND already-seeded DBs.
 function ensurePrimaryExtraSubjects() {
@@ -254,4 +280,4 @@ function ensurePrimaryExtraSubjects() {
   if (added) console.log('[migrate] added primary subjects 40=প্রাথমিক বিজ্ঞান, 41=বাংলাদেশ ও বিশ্বপরিচয়');
 }
 
-module.exports = { db, initSchema, ensurePrimaryExtraSubjects, ensureClass610Subjects, ensureSubjectGroups, ensureClass1112Subjects, backfillChapters };
+module.exports = { db, initSchema, ensurePrimaryExtraSubjects, ensureClass610Subjects, ensureSubjectGroups, ensureClass1112Subjects, ensureAdmissionSubjects, backfillChapters };
