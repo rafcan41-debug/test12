@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>প্রশ্নব্যাংক — পরীক্ষা</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #f7f8fa; --card: #fff; --text: #1a1a2e; --muted: #6b7280; --green: #0d6e4f; --green-lt: #e8f5e9; --border: #e5e7eb; }
+[data-theme="dark"] { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --muted: #94a3b8; --green: #34d399; --green-lt: #064e3b; --border: #334155; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Hind Siliguri', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+/* Sidebar */
+.sidebar { width: 240px; background: var(--card); border-right: 1px solid var(--border); padding: 20px 12px; position: fixed; height: 100vh; overflow-y: auto; z-index: 20; }
+.logo { font-size: 1.5rem; font-weight: 700; color: var(--green); padding: 0 12px 20px; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: .95rem; color: var(--text); text-decoration: none; margin-bottom: 2px; }
+.nav-item:hover { background: var(--green-lt); }
+.nav-item.active { background: var(--green-lt); color: var(--green); font-weight: 600; }
+.nav-item .ico { font-size: 1.2rem; width: 28px; text-align: center; }
+/* Main */
+.main { margin-left: 240px; flex: 1; padding: 0; }
+.topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+.topbar h1 { font-size: 1.3rem; }
+.theme-btn { background: var(--green-lt); border: none; border-radius: 20px; padding: 8px 16px; cursor: pointer; font-size: .9rem; color: var(--green); }
+.content { padding: 24px 28px; max-width: 1200px; }
+/* Tabs */
+.tabs { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; padding: 8px 22px; cursor: pointer; font-size: .9rem; }
+.tab.active { background: var(--green); color: #fff; border-color: var(--green); }
+/* Search */
+.search-row { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.search { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; padding: 10px 20px; width: 300px; font-size: .9rem; font-family: inherit; }
+/* Cards */
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: .2s; }
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.12); transform: translateY(-2px); }
+.card h3 { font-size: 1.05rem; margin-bottom: 10px; }
+.card .meta { display: flex; gap: 14px; font-size: .82rem; color: var(--muted); flex-wrap: wrap; }
+.card .qcount { display: inline-block; background: var(--green-lt); color: var(--green); border-radius: 12px; padding: 2px 10px; font-size: .78rem; font-weight: 600; margin-top: 8px; }
+/* Question view */
+#qview { display: none; }
+.back-btn { cursor: pointer; color: var(--green); font-weight: 700; margin-bottom: 16px; display: inline-block; }
+.q-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
+.q-num { display: inline-block; background: var(--green); color: #fff; font-weight: 700; border-radius: 6px; padding: 2px 10px; margin-bottom: 8px; font-size: .82rem; }
+.q-text { font-size: 1.02rem; font-weight: 600; margin-bottom: 10px; line-height: 1.65; white-space: pre-line; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.opt { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: .92rem; line-height: 1.5; }
+.opt b { color: var(--green); }
+.ans { background: var(--green-lt); border-radius: 8px; padding: 10px 14px; }
+.ans .correct { color: var(--green); font-weight: 700; }
+.ans .expl { margin-top: 6px; font-size: .88rem; color: var(--muted); line-height: 1.6; }
+.sec-head { font-size: 1.15rem; margin: 20px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--green); }
+@media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; } .cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 550px) { .cards { grid-template-columns: 1fr; } .opts { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">📚 পরীক্ষা</div>
+  <a class="nav-item" href="/dashboard.html"><span class="ico">🏠</span> ড্যাশবোর্ড</a>
+  <a class="nav-item active" href="/qbank.html"><span class="ico">📖</span> প্রশ্নব্যাংক</a>
+  <a class="nav-item" href="/exams.html"><span class="ico">🎯</span> অ্যাডমিশন</a>
+  <a class="nav-item" href="/exams.html"><span class="ico">📝</span> পরীক্ষা</a>
+  <a class="nav-item" href="/practice.html"><span class="ico">⚡</span> কুইক প্র্যাকটিস</a>
+  <a class="nav-item" href="/bookmarks.html"><span class="ico">🔖</span> হিস্ট্রি</a>
+  <a class="nav-item" href="/leaderboard.html"><span class="ico">🏆</span> লিডারবোর্ড</a>
+  <a class="nav-item" href="/pricing.html"><span class="ico">⭐</span> প্রিমিয়াম</a>
+</nav>
+<div class="main">
+  <div class="topbar">
+    <h1>📖 প্রশ্নব্যাংক</h1>
+    <button class="theme-btn" onclick="toggleTheme()">🌙 ডার্ক মোড</button>
+  </div>
+  <div class="content">
+    <div id="home-view">
+      <div class="tabs" id="cat-tabs"></div>
+      <div class="search-row"><input class="search" id="search" placeholder="🔍 Search for exams..." oninput="renderCards()"></div>
+      <div id="sections"></div>
+    </div>
+    <div id="qview">
+      <span class="back-btn" onclick="goHome()">← ফিরে যাও</span>
+      <h2 id="qv-title" style="margin-bottom:16px"></h2>
+      <div id="qlist"></div>
+    </div>
+  </div>
+</div>
+<script>
+// Theme
+function toggleTheme() {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? '' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('theme', t);
+  document.querySelector('.theme-btn').textContent = t === 'dark' ? '☀️ লাইট মোড' : '🌙 ডার্ক মোড';
+}
+if (localStorage.getItem('theme') === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); document.querySelector('.theme-btn').textContent = '☀️ লাইট মোড'; }
+
+// Categories
+const CATS = [
+  { id: 'hsc', name: 'HSC বোর্ড' },
+  { id: 'admission', name: 'অ্যাডমিশন' },
+  { id: 'ssc', name: 'SSC বোর্ড' },
+];
+let curCat = 'hsc';
+
+// Exam data - loaded from API
+let EXAMS = [];
+let QUESTIONS = {};
+
+async function loadExams() {
+  try {
+    const r = await fetch('/api/catalog', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
+    const d = await r.json();
+    // Build exam cards from catalog
+    EXAMS = buildCards(d);
+  } catch (e) {
+    // Fallback: static cards
+    EXAMS = staticCards();
+  }
+  renderTabs();
+  renderCards();
+}
+
+function staticCards() {
+  const boards = ['ঢাকা', 'কুমিল্লা', 'রাজশাহী', 'যশোর', 'চট্টগ্রাম', 'বরিশাল', 'সিলেট', 'দিনাজপুর', 'ময়মনসিংহ'];
+  const cards = [{ id: 'hsc-2026', title: 'সকল বোর্ড ২০২৬', cat: 'hsc', year: 2026, qs: 30, time: '৩০ মিনিট', marks: 30 }];
+  boards.forEach(b => cards.push({ id: 'hsc-2026', title: b + ' বোর্ড ২০২৬', cat: 'hsc', year: 2026, qs: 30, time: '৩০ মিনিট', marks: 30 }));
+  cards.push({ id: 'ru-b-2526', title: 'RU B 25-26', cat: 'admission', year: 2025, qs: 89, time: '৬০ মিনিট', marks: 89 });
+  return cards;
+}
+
+function buildCards(catalog) {
+  // Group questions by year/unit from catalog data
+  return staticCards(); // Simplified for now
+}
+
+function renderTabs() {
+  const t = document.getElementById('cat-tabs');
+  t.innerHTML = CATS.map(c => `<button class="tab ${c.id === curCat ? 'active' : ''}" onclick="setCat('${c.id}')">${c.name}</button>`).join('');
+}
+
+function setCat(id) {
+  curCat = id;
+  renderTabs();
+  renderCards();
+}
+
+function renderCards() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const list = EXAMS.filter(e => e.cat === curCat && (!q || e.title.toLowerCase().includes(q)));
+  // Group by year
+  const byYear = {};
+  list.forEach(e => {
+    const y = e.year || 'অন্যান্য';
+    if (!byYear[y]) byYear[y] = [];
+    byYear[y].push(e);
+  });
+  const years = Object.keys(byYear).sort().reverse();
+  document.getElementById('sections').innerHTML = years.map(y => `
+    <div class="sec-head">${y}</div>
+    <div class="cards">${byYear[y].map(e => `
+      <div class="card" onclick="openExam('${e.id}', '${e.title}')">
+        <h3>${e.title}</h3>
+        <div class="meta"><span>🕐 ${e.time}</span><span>📝 ${e.qs}টি প্রশ্ন</span><span>🏆 ${e.marks} মার্কস</span></div>
+        <span class="qcount">${e.qs}টি প্রশ্ন</span>
+      </div>`).join('')}
+    </div>`).join('') || '<p style="color:var(--muted)">কোনো পরীক্ষা পাওয়া যায়নি</p>';
+}
+
+async function openExam(id, title) {
+  document.getElementById('home-view').style.display = 'none';
+  document.getElementById('qview').style.display = 'block';
+  document.getElementById('qv-title').textContent = title;
+  document.getElementById('qlist').innerHTML = '<p>লোড হচ্ছে...</p>';
+  try {
+    const r = await fetch('/api/questions/exam/' + id, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
+    const qs = await r.json();
+    showQuestions(qs);
+  } catch (e) {
+    document.getElementById('qlist').innerHTML = '<p style="color:var(--muted)">প্রশ্ন লোড করা যায়নি। লগইন করো।</p>';
+  }
+  window.scrollTo(0, 0);
+}
+
+function showQuestions(qs) {
+  const ABC = ['ক', 'খ', 'গ', 'ঘ'];
+  document.getElementById('qlist').innerHTML = qs.map((x, i) => `
+    <div class="q-card">
+      <span class="q-num">${i + 1}</span>
+      <div class="q-text">${esc(x.question_text)}</div>
+      <div class="opts">${['option_a','option_b','option_c','option_d'].map((k, j) => `<div class="opt"><b>${ABC[j]}.</b> ${esc(x[k])}</div>`).join('')}</div>
+      ${x.correct_option ? `<div class="ans"><span class="correct">✅ উত্তর: (${ABC['abcd'.indexOf(x.correct_option)]}) ${esc(x['option_' + x.correct_option])}</span>${x.explanation ? `<div class="expl">${esc(x.explanation)}</div>` : ''}</div>` : ''}
+    </div>`).join('');
+}
+
+function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function goHome() {
+  document.getElementById('qview').style.display = 'none';
+  document.getElementById('home-view').style.display = 'block';
+}
+
+loadExams();
+</script>
+</body>
+</html>
