@@ -26,6 +26,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/catalog', require('./src/routes/catalog'));
 app.use('/api/questions', require('./src/routes/questions'));
+app.use('/api/qbank', require('./src/routes/qbank'));
 app.use('/api/exams', require('./src/routes/exams'));
 app.use('/api/practice', require('./src/routes/practice'));
 app.use('/api/bookmarks', require('./src/routes/bookmarks'));

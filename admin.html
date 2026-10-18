@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="title_admin">অ্যাডমিন প্যানেল — পরীক্ষা</title>
+<link rel="stylesheet" href="/css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>.admin-tabs{position:sticky;top:57px;background:var(--bg);padding:8px 0;z-index:40}</style>
+</head>
+<body>
+<header><div class="nav"></div></header>
+<div class="container">
+  <div class="section">
+    <h2 data-i18n="h2_admin">️ অ্যাডমিন প্যানেল</h2>
+    <div id="pw-warn"></div>
+    <div class="tabs admin-tabs" id="tabs"></div>
+    <div id="pane"></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script src="/js/lang.js"></script>
+<script>
+let CAT = [];
+const T = PK.lang.t;
+const TABS = [
+  ['stats', 'tab_stats'], ['users', 'tab_users'], ['questions', 'tab_questions'],
+  ['import', 'tab_import'], ['exams', 'tab_exams'], ['payments', 'tab_payments'],
+  ['tickets', 'tab_tickets'], ['audit', 'tab_audit'],
+];
+let cur = 'stats';
+
+(async () => {
+  const u = await PK.requireAuth(); if (!u) return;
+  if (u.role !== 'admin') { location.href = '/dashboard.html'; return; }
+  await PK.nav('admin');
+  const d = await PK.api('/api/catalog'); CAT = d.categories;
+  document.getElementById('tabs').innerHTML = TABS.map(([k, l]) =>
+    `<button data-k="${k}" class="${k === cur ? 'active' : ''}">${T(l)}</button>`).join('');
+  document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+    cur = b.dataset.k;
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
+    render();
+  });
+  render();
+})();
+
+function render() {
+  ({ stats: pStats, users: pUsers, questions: pQuestions, import: pImport, exams: pExams, payments: pPayments, tickets: pTickets, audit: pAudit })[cur]();
+}
+
+// ---------- stats ----------
+async function pStats() {
+  const s = await PK.api('/api/admin/stats');
+  document.getElementById('pane').innerHTML = `<div class="grid">
+    <div class="card"><h3>${s.users}</h3><p class="muted">${T('stat_users')} (${s.students}${T('students_suffix')})</p></div>
+    <div class="card"><h3>${s.premium}</h3><p class="muted">${T('stat_premium')}</p></div>
+    <div class="card"><h3>${s.questions}</h3><p class="muted">${T('stat_questions')} (${s.question_drafts}${T('drafts_suffix')})</p></div>
+    <div class="card"><h3>${s.exams_taken}</h3><p class="muted">${T('stat_exams_taken')}</p></div>
+    <div class="card"><h3>${s.pending_payments}</h3><p class="muted">${T('stat_pending_payments')}</p></div>
+    <div class="card"><h3>${s.open_tickets}</h3><p class="muted">${T('stat_open_tickets')}</p></div>
+    <p style="margin-top:12px"><a class="btn small secondary" href="/api/admin/reports/results.csv">${T('btn_csv')}</a></p>`;
+}
+
+// ---------- users ----------
+async function pUsers() {
+  const d = await PK.api('/api/admin/users?limit=50');
+  const opts = (v, arr) => arr.map(o => `<option value="${o}" ${v === o ? 'selected' : ''}>${o}</option>`).join('');
+  document.getElementById('pane').innerHTML = `<table><tr><th>${T('th_id')}</th><th>${T('th_name')}</th><th>${T('label_email')}</th><th>${T('th_role')}</th><th>${T('th_status_col')}</th><th>${T('th_plan')}</th><th></th></tr>
+    ${d.users.map(u => `<tr><td>${u.id}</td><td>${PK.esc(u.name)}</td><td>${PK.esc(u.email)}</td>
+      <td><select id="r-${u.id}">${opts(u.role, ['student', 'teacher', 'admin'])}</select></td>
+      <td><select id="s-${u.id}">${opts(u.status, ['active', 'banned'])}</select></td>
+      <td><select id="p-${u.id}">${opts(u.plan, ['free', 'premium'])}</select></td>
+      <td><button class="btn small" onclick="saveUser(${u.id})">${T('btn_save')}</button></td></tr>`).join('')}</table>`;
+}
+async function saveUser(id) {
+  try {
+    await PK.api(`/api/admin/users/${id}`, { method: 'PUT', body: {
+      role: document.getElementById('r-' + id).value,
+      status: document.getElementById('s-' + id).value,
+      plan: document.getElementById('p-' + id).value } });
+    PK.toast(T('toast_saved'));
+  } catch (e) { PK.toast(e.message); }
+}
+
+// ---------- questions ----------
+let qPage = 1;
+async function pQuestions() {
+  const pane = document.getElementById('pane');
+  pane.innerHTML = `
+    <div class="card" style="margin-bottom:12px">
+      <div class="two-col">
+        <div><label>${T('label_subject')}</label><select id="qf-sub"><option value="">${T('opt_all')}</option></select>
+        <label>${T('label_difficulty')}</label><select id="qf-diff"><option value="">${T('opt_all')}</option><option value="easy">${T('diff_easy')}</option><option value="medium">${T('diff_medium')}</option><option value="hard">${T('diff_hard')}</option></select></div>
+        <div><label>${T('label_year')}</label><input id="qf-year" type="number" placeholder="${T('ph_year')}">
+        <label>${T('label_source')}</label><input id="qf-source" placeholder="${T('ph_source2')}"></div>
+      </div>
+      <div class="two-col">
+        <div><label>${T('label_status')}</label><select id="qf-status"><option value="">${T('opt_all')}</option><option value="draft">${T('status_draft')}</option><option value="published">${T('status_published')}</option><option value="archived">${T('status_archived')}</option></select></div>
+        <div><label>${T('label_search')}</label><input id="qf-q" placeholder="${T('ph_search')}"></div>
+      </div>
+      <button class="btn small" onclick="qPage=1;loadQ()">${T('btn_filter')}</button>
+      <button class="btn small secondary" onclick="qForm()">${T('btn_new_q')}</button>
+    </div>
+    <div id="q-list"></div><div id="q-form"></div>`;
+  const ss = document.getElementById('qf-sub');
+  CAT.forEach(c => c.subjects.forEach(s => ss.innerHTML += `<option value="${s.id}">${PK.esc(c.name_bn)} › ${PK.esc(s.name_bn)}</option>`));
+  loadQ();
+}
+async function loadQ() {
+  const p = new URLSearchParams({ page: qPage, limit: 15 });
+  ['sub:subject_id', 'diff:difficulty', 'year:year', 'source:source', 'status:status', 'q:q'].forEach(s => {
+    const [id, k] = s.split(':');
+    const v = document.getElementById('qf-' + id).value.trim();
+    if (v) p.set(k, v);
+  });
+  const d = await PK.api('/api/questions?' + p);
+  document.getElementById('q-list').innerHTML = `<p class="muted">${T('total_label')} ${d.total}</p><table>
+    <tr><th>${T('th_id')}</th><th>${T('th_question')}</th><th>${T('th_year_source')}</th><th>${T('label_status')}</th><th></th></tr>
+    ${d.questions.map(q => `<tr><td>${q.id}</td><td>${PK.esc(q.question_text.slice(0, 70))}…</td>
+      <td>${q.year || ''} ${PK.esc(q.source || '')}</td><td>${q.status}</td>
+      <td style="white-space:nowrap">
+        <button class="btn small secondary" onclick="qForm(${q.id})">${T('btn_edit')}</button>
+        <button class="btn small" onclick="qPublish(${q.id})">${T('btn_publish')}</button>
+        <button class="btn small danger" onclick="qDel(${q.id})">${T('btn_delete')}</button>
+      </td></tr>`).join('')}</table>
+    <div style="margin-top:8px"><button class="btn small secondary" ${qPage <= 1 ? 'disabled' : ''} onclick="qPage--;loadQ()">←</button>
+    <button class="btn small secondary" onclick="qPage++;loadQ()">→</button></div>`;
+}
+async function qForm(id) {
+  let q = null;
+  if (id) q = (await PK.api('/api/questions/' + id)).question;
+  const g = (k, dflt = '') => q ? (q[k] ?? dflt) : dflt;
+  document.getElementById('q-form').innerHTML = `<div class="card" style="margin-top:12px"><h3>${id ? T('form_edit_q') : T('form_new_q')}</h3>
+    <label>${T('label_subject_id')}</label><input id="qe-sub" type="number" value="${g('subject_id')}" placeholder="${T('ph_subject_id')}">
+    <label>${T('label_question')}</label><textarea id="qe-text" rows="2">${PK.esc(g('question_text'))}</textarea>
+    <div class="two-col">
+      <div><label>${T('label_opt_a')}</label><input id="qe-a" value="${PK.esc(g('option_a'))}"><label>${T('label_opt_c')}</label><input id="qe-c" value="${PK.esc(g('option_c'))}"></div>
+      <div><label>${T('label_opt_b')}</label><input id="qe-b" value="${PK.esc(g('option_b'))}"><label>${T('label_opt_d')}</label><input id="qe-d" value="${PK.esc(g('option_d'))}"></div>
+    </div>
+    <div class="two-col">
+      <div><label>${T('label_correct')}</label><select id="qe-correct">${['a','b','c','d'].map(o => `<option ${g('correct_option') === o ? 'selected' : ''}>${o}</option>`).join('')}</select>
+      <label>${T('label_difficulty')}</label><select id="qe-diff">${['easy','medium','hard'].map(o => `<option ${g('difficulty', 'medium') === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div>
+      <div><label>${T('label_year')} (${T('label_optional')})</label><input id="qe-year" type="number" value="${g('year') || ''}" placeholder="${T('ph_year')}">
+      <label>${T('label_source')} (${T('label_optional')})</label><input id="qe-source" value="${PK.esc(g('source') || '')}" placeholder="${T('ph_source2')}"></div>
+    </div>
+    <label>${T('label_explanation')}</label><textarea id="qe-exp" rows="2">${PK.esc(g('explanation') || '')}</textarea>
+    <label>${T('label_status')}</label><select id="qe-status">${['draft','published','archived'].map(o => `<option ${g('status', 'draft') === o ? 'selected' : ''}>${o}</option>`).join('')}</select>
+    <button class="btn" onclick="qSave(${id || 'null'})">${T('btn_save_q')}</button></div>`;
+  window.scrollTo(0, document.getElementById('q-form').offsetTop);
+}
+async function qSave(id) {
+  const body = {
+    subject_id: Number(document.getElementById('qe-sub').value),
+    question_text: document.getElementById('qe-text').value,
+    option_a: document.getElementById('qe-a').value, option_b: document.getElementById('qe-b').value,
+    option_c: document.getElementById('qe-c').value, option_d: document.getElementById('qe-d').value,
+    correct_option: document.getElementById('qe-correct').value,
+    difficulty: document.getElementById('qe-diff').value,
+    year: document.getElementById('qe-year').value || null,
+    source: document.getElementById('qe-source').value || null,
+    explanation: document.getElementById('qe-exp').value,
+    status: document.getElementById('qe-status').value,
+  };
+  try {
+    if (id) await PK.api('/api/questions/' + id, { method: 'PUT', body });
+    else await PK.api('/api/questions', { method: 'POST', body });
+    PK.toast(T('toast_saved')); document.getElementById('q-form').innerHTML = ''; loadQ();
+  } catch (e) { PK.toast(e.message); }
+}
+async function qPublish(id) { await PK.api(`/api/questions/${id}/publish`, { method: 'POST' }); PK.toast(T('toast_published')); loadQ(); }
+async function qDel(id) { if (confirm(T('confirm_delete_q'))) { await PK.api('/api/questions/' + id, { method: 'DELETE' }); loadQ(); } }
+
+// ---------- import ----------
+function pImport() {
+  document.getElementById('pane').innerHTML = `<div class="card" style="max-width:640px">
+    <h3>${T('h3_import')}</h3>
+    <ol>
+      <li><a href="/template-questions.json" download>${IC.fileText} ${T('imp_step1')}</a></li>
+      <li>${T('imp_step2')}</li>
+      <li>${T('imp_step3a')} <b>${T('imp_step3b')}</b> ${T('imp_step3c')}</li>
+    </ol>
+    <p class="muted">${T('imp_guide')} <a href="/IMPORT_GUIDE.md" target="_blank">IMPORT_GUIDE.md</a> • ${T('imp_format')} <code>{"questions": [...]}</code></p>
+    <label>${T('label_json')}</label><textarea id="imp-json" rows="10" placeholder='{"questions": [...]}'></textarea>
+    <button class="btn" onclick="doImport()">${T('btn_import')}</button>
+    <div id="imp-res" style="margin-top:10px"></div>
+    <hr style="margin:18px 0">
+    <h4>📦 Seed Packs</h4>
+    <p class="muted">seed_data/ folder er JSON file gulo DB te import koro (notun file upload er por)</p>
+    <button class="btn" onclick="doSeedPacks()">📦 Seed Packs Import</button>
+    <div id="seed-res" style="margin-top:10px"></div>
+  </div>`;
+}
+async function doSeedPacks() {
+  if (!confirm('seed_data/ er sob JSON file DB te import hobe. Continue?')) return;
+  document.getElementById('seed-res').innerHTML = '<p>⏳ Import hocche...</p>';
+  try {
+    const r = await PK.api('/api/admin/seed-packs', { method: 'POST', body: {} });
+    document.getElementById('seed-res').innerHTML =
+      `<p class="pass">✅ ${r.files}টি file, ${r.imported}টি প্রশ্ন import হয়েছে</p>` +
+      (r.errors && r.errors.length ? `<pre>${PK.esc(r.errors.slice(0, 10).join('\n'))}</pre>` : '');
+  } catch (e) {
+    document.getElementById('seed-res').innerHTML = `<p class="fail">❌ ${PK.esc(e.message)}</p>`;
+  }
+}
+async function doImport() {
+  try {
+    const data = JSON.parse(document.getElementById('imp-json').value);
+    const r = await PK.api('/api/questions/import', { method: 'POST', body: data });
+    document.getElementById('imp-res').innerHTML =
+      `<p class="pass">${IC.checkCircle} ${r.added}${T('imp_added')}</p>` +
+      (r.errors.length ? `<p class="fail">${IC.alert} ${r.errors.length}${T('imp_errors')}</p><pre>${PK.esc(JSON.stringify(r.errors.slice(0, 10), null, 1))}</pre>` : '');
+  } catch (e) { PK.toast(e.message); }
+}
+
+// ---------- exams ----------
+async function pExams() {
+  const d = await PK.api('/api/exams');
+  document.getElementById('pane').innerHTML = `
+    <div class="card" style="margin-bottom:12px"><h3>${T('h3_new_exam')}</h3>
+      <label>${T('label_title')}</label><input id="xe-title" placeholder="${T('ph_exam_title')}">
+      <div class="two-col">
+        <div><label>${T('label_category')}</label><select id="xe-cat"><option value="">—</option></select>
+        <label>${T('label_duration')}</label><input id="xe-dur" type="number" value="30"></div>
+        <div><label>${T('label_neg')}</label><input id="xe-neg" type="number" step="0.25" value="0.25">
+        <label>${T('label_pass')}</label><input id="xe-pass" type="number" value="0"></div>
+      </div>
+      <label>${T('label_type')}</label><select id="xe-mode"><option value="filter">${T('opt_filter')}</option><option value="fixed">${T('opt_fixed')}</option></select>
+      <div id="xe-filter-box">
+        <div class="two-col">
+          <div><label>${T('label_subject_id')}</label><input id="xe-sub" type="number" placeholder="${T('ph_subject_id')}">
+          <label>${T('label_year')}</label><input id="xe-year" type="number" placeholder="${T('ph_year')}"></div>
+          <div><label>${T('label_source')}</label><input id="xe-source" placeholder="${T('ph_source2')}">
+          <label>${T('label_qlimit')}</label><input id="xe-limit" type="number" value="20"></div>
+        </div>
+      </div>
+      <div id="xe-fixed-box" style="display:none"><label>${T('label_qids')}</label><input id="xe-ids" placeholder="${T('ph_qids')}"></div>
+      <button class="btn" onclick="examSave()">${T('btn_create')}</button>
+    </div>
+    <table><tr><th>${T('th_id')}</th><th>${T('th_title')}</th><th>${T('label_status')}</th><th></th></tr>
+    ${d.exams.map(e => `<tr><td>${e.id}</td><td>${PK.esc(e.title)}</td><td>${e.status}</td>
+      <td style="white-space:nowrap"><button class="btn small" onclick="examPub(${e.id})">${T('btn_publish')}</button>
+      <button class="btn small secondary" onclick="examArch(${e.id})">${T('btn_archive')}</button></td></tr>`).join('')}</table>`;
+  const cs = document.getElementById('xe-cat');
+  CAT.forEach(c => cs.innerHTML += `<option value="${c.id}">${PK.esc(c.name_bn)}</option>`);
+  document.getElementById('xe-mode').onchange = (e) => {
+    const fixed = e.target.value === 'fixed';
+    document.getElementById('xe-filter-box').style.display = fixed ? 'none' : 'block';
+    document.getElementById('xe-fixed-box').style.display = fixed ? 'block' : 'none';
+  };
+}
+async function examSave() {
+  const mode = document.getElementById('xe-mode').value;
+  const body = {
+    title: document.getElementById('xe-title').value,
+    category_id: Number(document.getElementById('xe-cat').value) || null,
+    duration_min: Number(document.getElementById('xe-dur').value),
+    negative_mark: Number(document.getElementById('xe-neg').value),
+    pass_marks: Number(document.getElementById('xe-pass').value),
+    selection_mode: mode,
+  };
+  if (mode === 'filter') {
+    body.filter = {
+      subject_id: Number(document.getElementById('xe-sub').value) || undefined,
+      year: document.getElementById('xe-year').value ? Number(document.getElementById('xe-year').value) : undefined,
+      source: document.getElementById('xe-source').value.trim() || undefined,
+      limit: Number(document.getElementById('xe-limit').value),
+    };
+    body.question_limit = body.filter.limit;
+  } else {
+    body.question_ids = document.getElementById('xe-ids').value.split(',').map(x => Number(x.trim())).filter(Boolean);
+  }
+  try { await PK.api('/api/exams', { method: 'POST', body }); PK.toast(T('toast_exam_created')); pExams(); }
+  catch (e) { PK.toast(e.message); }
+}
+async function examPub(id) { await PK.api(`/api/exams/${id}/publish`, { method: 'POST' }); PK.toast(T('toast_published')); pExams(); }
+async function examArch(id) { await PK.api(`/api/exams/${id}/archive`, { method: 'POST' }); pExams(); }
+
+// ---------- payments ----------
+async function pPayments() {
+  const d = await PK.api('/api/payments?status=pending');
+  document.getElementById('pane').innerHTML = d.payments.length ? `<table>
+    <tr><th>${T('th_id')}</th><th>${T('th_user')}</th><th>${T('th_txn')}</th><th>${T('th_amount')}</th><th>${T('th_date')}</th><th></th></tr>
+    ${d.payments.map(p => `<tr><td>${p.id}</td><td>${PK.esc(p.user_name)}<br><span class="muted">${PK.esc(p.user_email)}</span></td>
+      <td>${PK.esc(p.bkash_txn_id)}</td><td>৳${p.amount}</td><td>${PK.esc(p.created_at.slice(0, 16))}</td>
+      <td style="white-space:nowrap"><button class="btn small" onclick="payOk(${p.id})">${T('btn_approve')}</button>
+      <button class="btn small danger" onclick="payNo(${p.id})">${T('btn_reject')}</button></td></tr>`).join('')}</table>`
+    : `<p class="muted">${T('no_pending_payments')}</p>`;
+}
+async function payOk(id) { await PK.api(`/api/payments/${id}/approve`, { method: 'POST' }); PK.toast(T('toast_premium_on')); pPayments(); }
+async function payNo(id) { const n = prompt(T('prompt_reason')) || ''; await PK.api(`/api/payments/${id}/reject`, { method: 'POST', body: { note: n } }); pPayments(); }
+
+// ---------- tickets ----------
+async function pTickets() {
+  const d = await PK.api('/api/tickets');
+  document.getElementById('pane').innerHTML = d.tickets.length ? d.tickets.map(t => `
+    <div class="card" style="margin-bottom:8px"><b>#${t.id} ${PK.esc(t.subject)}</b> <span class="muted">[${t.status}] ${PK.esc(t.user_name)}</span>
+    <p class="muted">${PK.esc(t.message.slice(0, 120))}</p>
+    <div style="display:flex;gap:6px"><input id="tr-${t.id}" placeholder="${T('ph_reply')}" style="margin:0">
+    <button class="btn small" onclick="tReply(${t.id})">${T('btn_reply')}</button>
+    <button class="btn small secondary" onclick="tClose(${t.id})">${T('btn_close')}</button></div>`).join('')
+    : `<p class="muted">${T('no_tickets')}</p>`;
+}
+async function tReply(id) {
+  const m = document.getElementById('tr-' + id).value;
+  if (!m.trim()) return PK.toast(T('toast_write_reply'));
+  await PK.api(`/api/tickets/${id}/reply`, { method: 'POST', body: { message: m } });
+  PK.toast(T('toast_reply_sent')); pTickets();
+}
+async function tClose(id) { await PK.api(`/api/tickets/${id}/close`, { method: 'POST' }); pTickets(); }
+
+// ---------- audit ----------
+async function pAudit() {
+  const d = await PK.api('/api/admin/audit?limit=100');
+  document.getElementById('pane').innerHTML = `<table><tr><th>${T('th_time')}</th><th>${T('th_who')}</th><th>${T('th_action')}</th><th>${T('th_details')}</th></tr>
+    ${d.audit.map(a => `<tr><td>${PK.esc(a.created_at.slice(0, 19))}</td><td>${PK.esc(a.actor_name || '—')}</td>
+      <td>${PK.esc(a.action)}${a.target_type ? ' / ' + PK.esc(a.target_type) + '#' + a.target_id : ''}</td>
+      <td class="muted">${PK.esc((a.details || '').slice(0, 80))}</td></tr>`).join('')}</table>`;
+}
+</script>
+</body>
+</html>

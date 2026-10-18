@@ -52,7 +52,8 @@ body { font-family: 'Hind Siliguri', sans-serif; background: var(--bg); color: v
 .uni-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .uni-card { border-radius: 12px; padding: 20px 14px; color: #fff; cursor: pointer; text-align: center; transition: .2s; }
 .uni-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.2); }
-.uni-card .u-logo { width: 52px; height: 52px; background: rgba(255,255,255,.95); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+.uni-card .u-logo { width: 56px; height: 56px; background: rgba(255,255,255,.95); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.uni-card .u-logo img { width: 48px; height: 48px; object-fit: contain; }
 .uni-card h3 { font-size: 1rem; }
 .uni-card .cnt { font-size: .75rem; opacity: .9; margin-top: 4px; }
 /* Question view */
@@ -132,14 +133,38 @@ const SUBJECTS=[
  {t:'মার্কেটিং',s:'২য় পত্র',g:'linear-gradient(135deg,#689f38,#33691e)',i:'🎯',q:0},
 ];
 const UNIS=[
- {t:'ঢাবি',g:'linear-gradient(135deg,#64b5f6,#1e88e5)',i:'🎓',q:100},
- {t:'রাবি',g:'linear-gradient(135deg,#4dd0e1,#00acc1)',i:'🎓',q:89,id:'ru-b-2526'},
- {t:'চবি',g:'linear-gradient(135deg,#4db6ac,#00897b)',i:'🎓',q:0},
- {t:'আইবিএ',g:'linear-gradient(135deg,#ba68c8,#8e24aa)',i:'💼',q:0},
- {t:'গুচ্ছ',g:'linear-gradient(135deg,#f06292,#c2185b)',i:'🏛️',q:446},
- {t:'জবি',g:'linear-gradient(135deg,#aed581,#7cb342)',i:'🎓',q:0},
- {t:'কুবি',g:'linear-gradient(135deg,#4db6ac,#00796b)',i:'🎓',q:0},
- {t:'জাবি',g:'linear-gradient(135deg,#81c784,#43a047)',i:'🎓',q:0},
+ {t:'ঢাকা কেন্দ্রীয় বিশ্ববিদ্যালয়',g:'linear-gradient(135deg,#1a237e,#3949ab)',i:'🏛️',units:['সাইন্স']},
+ {t:'টেক্সটাইল ইঞ্জিনিয়ারিং কলেজ',g:'linear-gradient(135deg,#00695c,#00897b)',i:'🧵',units:[]},
+ {t:'বিইউপি',g:'linear-gradient(135deg,#4a148c,#7b1fa2)',logo:'/images/uni/bup.png',units:['বিইউপি FST','বিইউপি FASS','বিইউপি FSSS','বিইউপি FBS']},
+ {t:'মেরিটাইম',g:'linear-gradient(135deg,#0d47a1,#1976d2)',i:'⚓',units:['মেরিটাইম FEOS','মেরিটাইম FET','মেরিটাইম FMGP','মেরিটাইম FSA']},
+ {t:'বুয়েট',g:'linear-gradient(135deg,#b71c1c,#d32f2f)',i:'🔧',units:[]},
+ {t:'গুচ্ছ ইঞ্জিঃ',g:'linear-gradient(135deg,#e65100,#ef6c00)',i:'⚙️',units:[]},
+ {t:'রুয়েট',g:'linear-gradient(135deg,#4e342e,#6d4c41)',i:'🏭',units:[]},
+ {t:'কুয়েট',g:'linear-gradient(135deg,#33691e,#689f38)',i:'🏭',units:[]},
+ {t:'চুয়েট',g:'linear-gradient(135deg,#006064,#00838f)',i:'🏭',units:[]},
+ {t:'IUT',g:'linear-gradient(135deg,#1b5e20,#2e7d32)',i:'🕌',units:[]},
+ {t:'বুটেক্স',g:'linear-gradient(135deg,#880e4f,#ad1457)',i:'🧶',units:[]},
+ {t:'এমআইএসটি',g:'linear-gradient(135deg,#263238,#455a64)',i:'🎖️',units:[]},
+ {t:'মেডিকেল',g:'linear-gradient(135deg,#c62828,#e53935)',i:'⚕️',units:[]},
+ {t:'ডেন্টাল',g:'linear-gradient(135deg,#ad1457,#d81b60)',i:'🦷',units:[]},
+ {t:'এএফএমসি',g:'linear-gradient(135deg,#2e4053,#566573)',i:'🏥',units:[]},
+ {t:'আইবিএ',g:'linear-gradient(135deg,#5e35b1,#7b1fa2)',logo:'/images/uni/iba.png',units:['ঢাবি আইবিএ','আর্মি আইবিএ','জাবি আইবিএ']},
+ {t:'নার্সিং',g:'linear-gradient(135deg,#00838f,#00acc1)',i:'💉',units:['ডিপ্লোমা নার্সিং','বিএসসি নার্সিং']},
+ {t:'গুচ্ছ',g:'linear-gradient(135deg,#2e7d32,#43a047)',logo:'/images/uni/gst.png',units:['গুচ্ছ ক','গুচ্ছ খ','গুচ্ছ গ','কুবি এ','যবিপ্রবি','হাবিপ্রবি এ','মাভাবিপ্রবি','ইবি','বশেমুরবিপ্রবি','পাবিপ্রবি','রাবিপ্রবি','পবিপ্রবি','নোবিপ্রবি']},
+ {t:'ঢাবি',g:'linear-gradient(135deg,#1a237e,#283593)',logo:'/images/uni/du.png',units:['ঢাবি বি','ঢাবি সি','ঢাবি আইবিএ']},
+ {t:'জাবি',g:'linear-gradient(135deg,#33691e,#558b2f)',logo:'/images/uni/ju.png',units:['জাবি এ','জাবি বি','জাবি সি','জাবি ডি','জাবি ই','জাবি এফ','জাবি এইচ']},
+ {t:'রাবি',g:'linear-gradient(135deg,#00695c,#00897b)',logo:'/images/uni/ru.png',units:['রাবি এ','রাবি বি','রাবি বি অবাণিজ্য','রাবি সি','রাবি সি অবিজ্ঞান'],id:'ru-b-2526'},
+ {t:'খুবি',g:'linear-gradient(135deg,#4e342e,#795548)',i:'🎓',units:['খুবি এ','খুবি বি','খুবি সি','খুবি ডি']},
+ {t:'চবি',g:'linear-gradient(135deg,#00796b,#26a69a)',logo:'/images/uni/cu.png',units:['চবি এ','চবি বি','চবি সি','চবি ডি']},
+ {t:'শাবিপ্রবি',g:'linear-gradient(135deg,#6a1b9a,#8e24aa)',logo:'/images/uni/sust.png',units:['শাবিপ্রবি এ','শাবিপ্রবি বি']},
+ {t:'জবি',g:'linear-gradient(135deg,#e65100,#f57c00)',logo:'/images/uni/jnu.png',units:['জবি এ','জবি বি','জবি সি','জবি ডি']},
+ {t:'হাবিপ্রবি',g:'linear-gradient(135deg,#3e2723,#6d4c41)',logo:'/images/uni/hstu.png',units:['হাবিপ্রবি এ','হাবিপ্রবি বি','হাবিপ্রবি সি','হাবিপ্রবি ডি']},
+ {t:'কুবি',g:'linear-gradient(135deg,#00838f,#26c6da)',logo:'/images/uni/cou.png',units:['কুবি এ','কুবি বি','কুবি সি']},
+ {t:'জাতীয় বিশ্ববিদ্যালয়',g:'linear-gradient(135deg,#0d47a1,#42a5f5)',logo:'/images/uni/nu.png',units:['সাইন্স','আর্টস','কমার্স']},
+ {t:'চারুকলা অনুষদ',g:'linear-gradient(135deg,#f9a825,#ffca28)',i:'🎨',units:[]},
+ {t:'কৃষি গুচ্ছ',g:'linear-gradient(135deg,#2e7d32,#66bb6a)',i:'🌾',units:['এগ্রি গুচ্ছ','গাকৃবি','বাকৃবি','শেকৃবি','সিভাসু','সিকৃবি']},
+ {t:'বিসিএস প্রিলি',g:'linear-gradient(135deg,#4a148c,#9c27b0)',i:'📜',units:[]},
+ {t:'শিক্ষক নিবন্ধন',g:'linear-gradient(135deg,#01579b,#0288d1)',i:'👨‍🏫',units:[]},
 ];
 function setTab(t,el){curTab=t;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');render();}
 function render(){
@@ -158,17 +183,39 @@ function render(){
  if(curTab==='uni'){
   const list=UNIS.filter(m=>m.t.toLowerCase().includes(q));
   h+='<div class="sec olive-bg"><h2>প্রতিষ্ঠান ভিত্তিক</h2><div class="sub">বিগত বছরের ভর্তি পরীক্ষার প্রশ্ন</div><div class="uni-grid">'+
-   list.map(m=>'<div class="uni-card" style="background:'+m.g+'" onclick="openQ(\''+(m.id||'')+'\',\''+m.t+'\')"><div class="u-logo">'+m.i+'</div><h3>'+m.t+'</h3><div class="cnt">'+m.q+'টি প্রশ্ন</div></div>').join('')+'</div></div>';
+   list.map(m=>'<div class="uni-card" style="background:'+m.g+'" onclick="openUni(\''+m.t.replace(/'/g,"\\'")+'\')"><div class="u-logo">'+(m.logo?'<img src="'+m.logo+'" alt="'+m.t+'" onerror="this.style.display=\'none\'">':m.i)+'</div><h3>'+m.t+'</h3><div class="cnt">'+(m.units&&m.units.length?m.units.length+'টি ইউনিট':'শীঘ্রই আসছে')+'</div></div>').join('')+'</div></div>';
  }
  document.getElementById('sections').innerHTML=h||'<p style="color:var(--muted)">কিছু পাওয়া যায়নি</p>';
 }
-function openQ(id,title){
- if(!id){alert('শীঘ্রই আসছে!');return;}
+function openUni(name){
+ const u=UNIS.find(x=>x.t===name);
+ if(!u){alert('শীঘ্রই আসছে!');return;}
+ // Map Bangla uni/unit names to DB unit codes
+ const UM={'ঢাবি বি':'DU-B','ঢাবি সি':'DU-C','ঢাবি আইবিএ':'IBA-DU','আইবিএ':'IBA-DU'};
+ document.getElementById('home-view').style.display='none';
+ document.getElementById('qview').style.display='block';
+ document.getElementById('qv-title').textContent=name+' — ইউনিট';
+ const units=(u.units||[]).filter(x=>UM[x]);
+ if(!units.length){document.getElementById('qlist').innerHTML='<p style="color:var(--muted)">শীঘ্রই আসছে!</p>';return;}
+ document.getElementById('qlist').innerHTML='<div class="cards">'+units.map(x=>'<div class="card" onclick="openUnitYears(\''+UM[x]+'\',\''+x+'\')"><h3>'+x+'</h3><div class="meta"><span>📝 প্রশ্নব্যাংক</span></div></div>').join('')+'</div>';
+ window.scrollTo(0,0);
+}
+function openUnitYears(unit,title){
+ document.getElementById('qv-title').textContent=title+' — বছর';
+ document.getElementById('qlist').innerHTML='<p>লোড হচ্ছে...</p>';
+ fetch('/api/qbank/units/'+encodeURIComponent(unit)+'/years',{headers:{'Authorization':'Bearer '+localStorage.getItem('token')}}).then(r=>r.json()).then(years=>{
+  if(!years.length){document.getElementById('qlist').innerHTML='<p style="color:var(--muted)">প্রশ্ন পাওয়া যায়নি</p>';return;}
+  document.getElementById('qlist').innerHTML='<div class="cards">'+years.map(y=>'<div class="card" onclick="openQ(\''+unit+'\',\''+y.year+'\',\''+title+' '+y.year+'\')"><h3>'+y.year+'</h3><div class="meta"><span>📝 '+y.c+'টি প্রশ্ন</span></div></div>').join('')+'</div>';
+ }).catch(()=>{document.getElementById('qlist').innerHTML='<p style="color:var(--muted)">লগইন করে আবার চেষ্টা করো।</p>';});
+ window.scrollTo(0,0);
+}
+function openQ(unit,year,title){
+ if(!unit){alert('শীঘ্রই আসছে!');return;}
  document.getElementById('home-view').style.display='none';
  document.getElementById('qview').style.display='block';
  document.getElementById('qv-title').textContent=title;
  document.getElementById('qlist').innerHTML='<p>লোড হচ্ছে...</p>';
- fetch('/api/qbank/'+id,{headers:{'Authorization':'Bearer '+localStorage.getItem('token')}}).then(r=>r.json()).then(showQ).catch(()=>{document.getElementById('qlist').innerHTML='<p style="color:var(--muted)">লগইন করে আবার চেষ্টা করো।</p>';});
+ fetch('/api/qbank?unit='+encodeURIComponent(unit)+(year?'&year='+year:'')+'&limit=100',{headers:{'Authorization':'Bearer '+localStorage.getItem('token')}}).then(r=>r.json()).then(d=>showQ(d.questions||d)).catch(()=>{document.getElementById('qlist').innerHTML='<p style="color:var(--muted)">লগইন করে আবার চেষ্টা করো।</p>';});
  window.scrollTo(0,0);
 }
 function showQ(qs){
