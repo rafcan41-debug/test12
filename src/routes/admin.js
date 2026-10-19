@@ -102,4 +102,52 @@ router.get('/reports/results.csv', (req, res) => {
   res.send('﻿' + csv); // BOM for Excel Bangla support
 });
 
+// POST /api/admin/seed-packs — import seed_data/*.json question packs on demand
+// (for when files are uploaded after the initial seed)
+router.post('/seed-packs', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const { db } = require('../db');
+  const packDir = path.join(__dirname, '..', '..', 'seed_data');
+  if (!fs.existsSync(packDir)) return res.status(404).json({ error: 'seed_data folder পাওয়া যায়নি' });
+
+  const packIns = db.prepare(`INSERT INTO questions
+    (subject_id, chapter_id, topic_id, question_text, option_a, option_b, option_c, option_d,
+     correct_option, explanation, marks, difficulty, tags, prev_year, year, unit, source, origin, status, created_by)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'user', 'published', NULL)`);
+
+  let imported = 0, files = 0;
+  const errors = [];
+  const existing = new Set(db.prepare('SELECT question_text, subject_id, year FROM questions').all()
+    .map(r => r.question_text + '|' + r.subject_id + '|' + r.year));
+
+  for (const f of fs.readdirSync(packDir).filter(f => f.endsWith('.json')).sort()) {
+    try {
+      const items = JSON.parse(fs.readFileSync(path.join(packDir, f), 'utf8')).questions || [];
+      let added = 0;
+      const tx = db.transaction((list) => {
+        for (const b of list) {
+          const key = String(b.question_text || '').trim() + '|' + b.subject_id + '|' + (b.year || '');
+          if (existing.has(key)) continue; // skip duplicates
+          if (!b.question_text || !b.option_a) continue;
+          packIns.run(b.subject_id, b.chapter_id || null, b.topic_id || null,
+            String(b.question_text).trim(),
+            String(b.option_a || '').trim(), String(b.option_b || '').trim(),
+            String(b.option_c || '').trim(), String(b.option_d || '').trim(),
+            b.correct_option || null, (b.explanation || '').trim() || null,
+            Number(b.marks || 1), b.difficulty || 'medium', b.tags || null,
+            (b.prev_year || b.year || b.source) ? 1 : 0, b.year || null, b.unit || null, b.source || null);
+          existing.add(key);
+          added++;
+        }
+      });
+      tx(items);
+      imported += added; files++;
+    } catch (e) { errors.push(f + ': ' + e.message); }
+  }
+  db.prepare(`INSERT INTO audit_log (actor_id, action, target_type, details) VALUES (?,?,?,?)`)
+    .run(req.user.id, 'seed-packs.import', 'question', `files=${files} imported=${imported}`);
+  res.json({ files, imported, errors });
+});
+
 module.exports = router;
