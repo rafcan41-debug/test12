@@ -184,7 +184,24 @@ function pImport() {
     <label>${T('label_json')}</label><textarea id="imp-json" rows="10" placeholder='{"questions": [...]}'></textarea>
     <button class="btn" onclick="doImport()">${T('btn_import')}</button>
     <div id="imp-res" style="margin-top:10px"></div>
+    <hr style="margin:18px 0">
+    <h4>📦 Seed Packs</h4>
+    <p class="muted">seed_data/ folder er JSON file gulo DB te import koro (notun file upload er por)</p>
+    <button class="btn" onclick="doSeedPacks()">📦 Seed Packs Import</button>
+    <div id="seed-res" style="margin-top:10px"></div>
   </div>`;
+}
+async function doSeedPacks() {
+  if (!confirm('seed_data/ er sob JSON file DB te import hobe. Continue?')) return;
+  document.getElementById('seed-res').innerHTML = '<p>⏳ Import hocche...</p>';
+  try {
+    const r = await PK.api('/api/admin/seed-packs', { method: 'POST', body: {} });
+    document.getElementById('seed-res').innerHTML =
+      `<p class="pass">✅ ${r.files}টি file, ${r.imported}টি প্রশ্ন import হয়েছে</p>` +
+      (r.errors && r.errors.length ? `<pre>${PK.esc(r.errors.slice(0, 10).join('\n'))}</pre>` : '');
+  } catch (e) {
+    document.getElementById('seed-res').innerHTML = `<p class="fail">❌ ${PK.esc(e.message)}</p>`;
+  }
 }
 async function doImport() {
   try {
