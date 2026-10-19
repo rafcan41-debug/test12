@@ -4,7 +4,8 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db');
-const { requireAuth, apiLimiter } = require('../auth');
+const { requireAuth } = require('../auth');
+const { apiLimiter } = require('../ratelimit');
 
 // List units with question counts (for cards)
 router.get('/units', requireAuth, apiLimiter, (req, res) => {
