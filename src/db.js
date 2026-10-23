@@ -30,6 +30,7 @@ function migrateQuestions() {
   db.exec('ALTER TABLE questions ADD COLUMN year INTEGER');
   db.exec('ALTER TABLE questions DROP COLUMN source');
   db.exec('ALTER TABLE questions ADD COLUMN source TEXT');
+  db.exec('ALTER TABLE questions ADD COLUMN unit TEXT');
   db.exec('CREATE INDEX IF NOT EXISTS idx_questions_year_source ON questions(year, source, status)');
 
   // Demo year/source on existing seeded sample rows so the filter is demonstrable.
@@ -53,13 +54,35 @@ function initSchema() {
   migrateQuestions(); // upgrade old DBs BEFORE schema exec (new index needs new columns)
   const schema = fs.readFileSync(path.join(__dirname, '..', 'schema.sql'), 'utf8');
   db.exec(schema);
+  // Add unit column for admission previous-year questions (idempotent, after schema)
+  const qCols = columnNames('questions');
+  if (!qCols.includes('unit')) {
+    console.log('[migrate] adding unit column to questions...');
+    db.exec('ALTER TABLE questions ADD COLUMN unit TEXT');
+  }
   migrateExamsAuto(); // add is_auto to older DBs
   ensurePrimaryExtraSubjects(); // fixed ids 40/41 for import files (no-op when categories not seeded yet)
   ensureClass610Subjects(); // fixed ids 100-148 for class 6-10 question packs
   ensureSubjectGroups(); // tag class 9-10 subjects with group (common/science/business/humanities)
   ensureClass1112Subjects(); // fixed ids 200+ for class 11-12 (HSC) question bank
   ensureAdmissionSubjects(); // fixed ids 300-307 for university admission previous-year questions
+  cleanupDuplicateSubjects(); // remove old empty HSC subjects superseded by 200-237
   backfillChapters(); // build chapters from question tags (idempotent)
+}
+
+// Remove old duplicate HSC subjects (no questions, superseded by 200-237 bank)
+function cleanupDuplicateSubjects() {
+  const dupNames = ['পদার্থবিজ্ঞান ১ম পত্র', 'রসায়ন ১ম পত্র', 'উচ্চতর গণিত', 'English'];
+  for (const bn of dupNames) {
+    const rows = db.prepare(
+      `SELECT s.id FROM subjects s LEFT JOIN questions q ON q.subject_id = s.id AND q.status = 'published'
+       WHERE s.name_bn = ? AND s.id < 200 GROUP BY s.id HAVING COUNT(q.id) = 0`
+    ).all(bn);
+    for (const r of rows) {
+      db.prepare('DELETE FROM subjects WHERE id = ?').run(r.id);
+      console.log('[migrate] removed empty duplicate subject', r.id, bn);
+    }
+  }
 }
 
 // Older DBs: exams table lacks is_auto
