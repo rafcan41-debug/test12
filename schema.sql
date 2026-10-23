@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS questions (
   tags TEXT,
   prev_year INTEGER NOT NULL DEFAULT 0,
   year INTEGER,                       -- e.g. 2024 (exam year, for previous-year questions)
+  unit TEXT,                          -- e.g. "DU-B", "GST-A" (admission unit, for previous-year questions)
   source TEXT,                        -- e.g. "SSC Dhaka Board", "Medical Admission" (free text)
   origin TEXT NOT NULL DEFAULT 'user' CHECK (origin IN ('sample','user')),  -- sample = seeded demo, user = added via panel/API
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','archived')),

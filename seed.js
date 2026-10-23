@@ -21,7 +21,7 @@ const CATS = [
   ['ssc', 'এসএসসি (৯ম–১০ম)', 'SSC',
     [['বাংলা ১ম পত্র', 'Bangla 1st'], ['সাধারণ গণিত', 'General Math'], ['পদার্থবিজ্ঞান', 'Physics'], ['English', 'English']]],
   ['hsc', 'এইচএসসি (১১শ–১২শ)', 'HSC',
-    [['পদার্থবিজ্ঞান ১ম পত্র', 'Physics 1st'], ['রসায়ন ১ম পত্র', 'Chemistry 1st'], ['উচ্চতর গণিত', 'Higher Math'], ['English', 'English']]],
+    []],
   ['medical', 'মেডিকেল ভর্তি', 'Medical Admission',
     [['জীববিজ্ঞান', 'Biology'], ['পদার্থবিজ্ঞান', 'Physics'], ['রসায়ন', 'Chemistry'], ['English', 'English']]],
   ['engineering', 'ইঞ্জিনিয়ারিং ভর্তি', 'Engineering Admission',
@@ -154,15 +154,15 @@ const path = require('path');
 const packDir = path.join(__dirname, 'seed_data');
 const packIns = db.prepare(`INSERT INTO questions
   (subject_id, chapter_id, topic_id, question_text, option_a, option_b, option_c, option_d,
-   correct_option, explanation, marks, difficulty, tags, prev_year, year, source, origin, status, created_by)
-  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'user', 'published', NULL)`);
+   correct_option, explanation, marks, difficulty, tags, prev_year, year, unit, source, origin, status, created_by)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'user', 'published', NULL)`);
 if (fs.existsSync(packDir)) {
   const packTx = db.transaction((items) => {
     for (const b of items) {
       packIns.run(b.subject_id, b.chapter_id || null, b.topic_id || null, String(b.question_text).trim(),
         String(b.option_a).trim(), String(b.option_b).trim(), String(b.option_c).trim(), String(b.option_d).trim(),
         b.correct_option, (b.explanation || '').trim() || null, Number(b.marks || 1), b.difficulty || 'medium',
-        b.tags || null, (b.prev_year || b.year || b.source) ? 1 : 0, b.year || null, b.source || null);
+        b.tags || null, (b.prev_year || b.year || b.source) ? 1 : 0, b.year || null, b.unit || null, b.source || null);
     }
   });
   let packCount = 0;
